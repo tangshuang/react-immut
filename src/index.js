@@ -25,7 +25,7 @@ export class Store {
     return () => this.subscribers.splice(index, 1)
   }
   dispatch(keyPath, fn) {
-    if (typeof keyPath === 'function') {
+    if (arguments.length === 1) {
       fn = keyPath
       keyPath = ''
     }
@@ -41,7 +41,7 @@ export class Store {
         return state
       }
       else {
-        return fn(state)
+        return typeof fn === 'function' ? fn(state) : fn
       }
     })
     this.state = next
