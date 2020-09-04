@@ -1,4 +1,12 @@
-import React, { createContext, useState, useCallback, useMemo, useEffect, Component } from 'react'
+import React, {
+  Component,
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useContext,
+} from 'react'
 import produce from 'immer'
 import { parse, assign } from 'ts-fns/cjs/key-path'
 
@@ -6,6 +14,7 @@ export class Store {
   constructor(initState) {
     this.state = initState
     this.subscribers = []
+    this.dispatch = this.dispatch.bind(this)
   }
   getState() {
     return this.state
@@ -49,7 +58,7 @@ export function Provider(props) {
   const [state, setState] = useState(store.state)
 
   const value = useMemo(() => {
-    const dispatch = store.dispatch.bind(store)
+    const { dispatch } = store
     return { state, dispatch }
   }, [state])
 
@@ -92,7 +101,7 @@ export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, { conte
 }
 
 export function useStore(keyPath, { context = defaultContext } = {}) {
-  const { state, dispatch } = context._currentValue
+  const { state, dispatch } = useContext(context)
   const state2 = keyPath ? parse(state, keyPath) : state
   const dispatch2 = useCallback((fn) => {
     if (keyPath) {
@@ -102,5 +111,48 @@ export function useStore(keyPath, { context = defaultContext } = {}) {
       dispatch(fn)
     }
   }, [keyPath])
+
+  // patch dispatchers to dispatch
+  if (typeof keyPath === 'string' && dispatch[keyPath]) {
+    Object.assign(dispatch2, dispatch[keyPath])
+  }
+
   return [state2, dispatch2]
+}
+
+export function createStore(initState) {
+  return new Store(initState)
+}
+
+export function combineStore(namespaces) {
+  const initState = {}
+  const fns = []
+
+  Object.keys(namespaces).forEach((name) => {
+    const { state, ...actions } = namespaces[name]
+    initState[name] = state
+    fns.push({ name, actions })
+  })
+
+  const store = new Store(initState)
+  const { dispatch } = store
+
+  fns.forEach(({ name, actions }) => {
+    Object.keys(actions).forEach((key) => {
+      const action = actions[key]
+      if (typeof action !== 'function') {
+        return
+      }
+      const fn = (...args) => {
+        const update = (fn) => {
+          dispatch(name, fn)
+        }
+        action(update, ...args)
+      }
+      dispatch[name] = dispatch[name] || {}
+      dispatch[name][key] = fn
+    })
+  })
+
+  return store
 }

@@ -11,13 +11,13 @@ npm i react-immut
 ## Usage
 
 ```js
-import { Store, Provider, connect, useStore } from 'react-immut'
+import { createStore, Provider, connect, useStore } from 'react-immut'
 ```
 
 **Step 1: create a store.**
 
 ```js
-const store = new Store({ name: 'Tom' })
+const store = createStore({ name: 'Tom' })
 ```
 
 **Step 2: wrap with Provider.**
@@ -147,4 +147,96 @@ fetch(url).then(res => res.json()).then(data => dispatch(state => {
 }))
 ```
 
-## MIT.
+## Combined Store
+
+In many situations, developers want to split the whole state and put component's files tegother. We provide a way to implement this easily.
+
+```js
+// components/a-some/store.js
+export const state = {
+  name: 'Tom',
+  age: 10,
+}
+
+export function changeName(dispatch, name) {
+  dispatch(state => {
+    state.name = name
+  })
+}
+
+export function changeAge(dispatch, age) {
+  dispatch(state => {
+    state.age = age
+  })
+}
+```
+
+```js
+// app.js
+import { combineStore } from 'react-immut'
+import * as Asome from './components/a-some/store.js'
+
+const store = combineStore({
+  Asome,
+})
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      ...
+    </Provider>
+  )
+}
+```
+
+`Asome` is a namespace, you can use this namespace in a component like this:
+
+```js
+// components/a-some/index.jsx
+import { connect } from 'react-immut'
+
+const mapStateToProps = (state) => {
+  const { Asome } = state // use namespace as a property of state, the state properties are on it
+  return { ...Asome }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  // here dispatch is a function, but defined dispatchers in store.js are patched on it
+  const { Asome } = dispatch // use namespace as a property, the methods are on it
+  return { ...Asome }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Asome)
+
+function Asome(props) {
+  const { name, age, changeName, changeAge } = props
+
+  return (
+    <>
+      <button onClick={() => changeName('new name')}>change name</button>
+      <button onClick={() => changeAge(20)}>change age</button>
+    </>
+  )
+}
+```
+
+In the previous code block, we use `changeName('new name')` directly the parameter will be passed into defined `changeName` as the second parameter in `store.js`.
+
+`useStore` works:
+
+```js
+function Asome(props) {
+  const [{ name, age }, { changeName, changeAge }] = useStore('Asome')
+
+  return (
+    <>
+      <button onClick={() => changeName('new name')}>change name</button>
+      <button onClick={() => changeAge(20)}>change age</button>
+    </>
+  )
+}
+```
+
+## License
+
+MIT.

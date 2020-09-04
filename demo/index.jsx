@@ -1,7 +1,7 @@
 import React from 'react'
-import { Store, Provider, connect, useStore } from '../src/index.js'
+import { Provider, connect, useStore, createStore } from '../src/index.js'
 
-const store = new Store({
+const store = createStore({
   todos: [
     { title: 'Title' },
   ],
