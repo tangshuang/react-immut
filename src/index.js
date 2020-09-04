@@ -34,7 +34,7 @@ export class Store {
     const next = produce(this.state, (state) => {
       if (keyPath) {
         const node = parse(state, keyPath)
-        const res = fn(node)
+        const res = typeof fn === 'function' ? fn(node) : fn
         if (typeof res !== 'undefined') {
           assign(state, keyPath, res)
         }
