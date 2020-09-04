@@ -1,0 +1,106 @@
+import React, { createContext, useState, useCallback, useMemo, useEffect, Component } from 'react'
+import produce from 'immer'
+import { parse, assign } from 'ts-fns/cjs/key-path'
+
+export class Store {
+  constructor(initState) {
+    this.state = initState
+    this.subscribers = []
+  }
+  getState() {
+    return this.state
+  }
+  subscribe(fn) {
+    const index = this.subscribers.length
+    this.subscribers.push(fn)
+    return () => this.subscribers.splice(index, 1)
+  }
+  dispatch(keyPath, fn) {
+    if (typeof keyPath === 'function') {
+      fn = keyPath
+      keyPath = ''
+    }
+
+    const prev = this.state
+    const next = produce(this.state, (state) => {
+      if (keyPath) {
+        const node = parse(state, keyPath)
+        const res = fn(node)
+        if (typeof res !== 'undefined') {
+          assign(state, keyPath, res)
+        }
+        return state
+      }
+      else {
+        return fn(state)
+      }
+    })
+    this.state = next
+    this.subscribers.forEach((fn) => {
+      fn(next, prev)
+    })
+  }
+}
+
+const defaultContext = createContext('aaa')
+
+export function Provider(props) {
+  const { store, context = defaultContext, children } = props
+  const [state, setState] = useState(store.state)
+
+  const value = useMemo(() => {
+    const dispatch = store.dispatch.bind(store)
+    return { state, dispatch }
+  }, [state])
+
+  useEffect(() => {
+    const unsubscribe = store.subscribe((next) => setState(next))
+    return unsubscribe
+  }, [])
+
+  const { Provider } = context
+
+  return <Provider value={value}>{children}</Provider>
+}
+
+export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, { context = defaultContext } = {}) {
+  return function(C) {
+    const { Consumer } = context
+    const componentName = C.name
+    class ConnectedComponent extends Component {
+      static name = componentName
+      render() {
+        const props = this.props
+        return (
+          <Consumer>{
+            ({ state, dispatch }) => {
+              const stateProps = mapStateToProps ? mapStateToProps(state, props) : {}
+              const dispatchProps = mapDispatchToPorps ? mapDispatchToPorps(dispatch, props) : {}
+              const combinedProps = mergeProps ? mergeProps(stateProps, dispatchProps, props) : {
+                ...stateProps,
+                ...dispatchProps,
+                ...props,
+              }
+              return <C {...combinedProps} />
+            }
+          }</Consumer>
+        )
+      }
+    }
+    return ConnectedComponent
+  }
+}
+
+export function useStore(keyPath, { context = defaultContext } = {}) {
+  const { state, dispatch } = context._currentValue
+  const state2 = keyPath ? parse(state, keyPath) : state
+  const dispatch2 = useCallback((fn) => {
+    if (keyPath) {
+      dispatch(keyPath, fn)
+    }
+    else {
+      dispatch(fn)
+    }
+  }, [keyPath])
+  return [state2, dispatch2]
+}
