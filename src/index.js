@@ -24,9 +24,9 @@ export class Store {
     this.subscribers.push(fn)
     return () => this.subscribers.splice(index, 1)
   }
-  dispatch(keyPath, fn) {
+  dispatch(keyPath, update) {
     if (arguments.length === 1) {
-      fn = keyPath
+      update = keyPath
       keyPath = ''
     }
 
@@ -34,24 +34,66 @@ export class Store {
     const next = produce(this.state, (state) => {
       if (keyPath) {
         const node = parse(state, keyPath)
-        const res = typeof fn === 'function' ? fn(node) : fn
+        const res = typeof update === 'function' ? update(node) : update
         if (typeof res !== 'undefined') {
           assign(state, keyPath, res)
         }
         return state
       }
       else {
-        return typeof fn === 'function' ? fn(state) : fn
+        return typeof update === 'function' ? update(state) : update
       }
     })
     this.state = next
     this.subscribers.forEach((fn) => {
       fn(next, prev)
     })
+
+    return this
+  }
+  combine(namespaces) {
+    const { dispatch, state } = this
+
+    const patchState = (name, initState) => {
+      if (name in state) {
+        return
+      }
+      state[name] = initState
+    }
+
+    const patchDispatch = (name, actions) => {
+      if (name in dispatch) {
+        return
+      }
+
+      dispatch[name] = dispatch[name] || {}
+
+      Object.keys(actions).forEach((key) => {
+        const action = actions[key]
+        if (typeof action !== 'function') {
+          return
+        }
+        const fn = (...args) => {
+          const update = (fn) => {
+            dispatch(name, fn)
+          }
+          return action(update, ...args)
+        }
+        dispatch[name][key] = fn
+      })
+    }
+
+    Object.keys(namespaces).forEach((name) => {
+      const { state, ...actions } = namespaces[name]
+      patchState(name, state)
+      patchDispatch(name, actions)
+    })
+
+    return this
   }
 }
 
-const defaultContext = createContext('aaa')
+const defaultContext = createContext()
 
 export function Provider(props) {
   const { store, context = defaultContext, children } = props
@@ -103,12 +145,12 @@ export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, { conte
 export function useStore(keyPath, { context = defaultContext } = {}) {
   const { state, dispatch } = useContext(context)
   const state2 = keyPath ? parse(state, keyPath) : state
-  const dispatch2 = useCallback((fn) => {
+  const dispatch2 = useCallback((update) => {
     if (keyPath) {
-      dispatch(keyPath, fn)
+      dispatch(keyPath, update)
     }
     else {
-      dispatch(fn)
+      dispatch(update)
     }
   }, [keyPath])
 
@@ -120,39 +162,10 @@ export function useStore(keyPath, { context = defaultContext } = {}) {
   return [state2, dispatch2]
 }
 
-export function createStore(initState) {
-  return new Store(initState)
-}
-
-export function combineStore(namespaces) {
-  const initState = {}
-  const fns = []
-
-  Object.keys(namespaces).forEach((name) => {
-    const { state, ...actions } = namespaces[name]
-    initState[name] = state
-    fns.push({ name, actions })
-  })
-
-  const store = new Store(initState)
-  const { dispatch } = store
-
-  fns.forEach(({ name, actions }) => {
-    Object.keys(actions).forEach((key) => {
-      const action = actions[key]
-      if (typeof action !== 'function') {
-        return
-      }
-      const fn = (...args) => {
-        const update = (fn) => {
-          dispatch(name, fn)
-        }
-        return action(update, ...args)
-      }
-      dispatch[name] = dispatch[name] || {}
-      dispatch[name][key] = fn
-    })
-  })
-
+export function createStore(initState, combined) {
+  const store = new Store(initState || {})
+  if (combined) {
+    store.combine(combined)
+  }
   return store
 }

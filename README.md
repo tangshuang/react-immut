@@ -90,16 +90,16 @@ function MyComponent() {
 }
 ```
 
-## dispatch(keyPath?, fn)
+## dispatch(keyPath?, update)
 
 To change state, you will use `dispatch` method. It receive two parameters:
 
 ```ts
-dispatch(keyPath?: string|array, fn: function)
+dispatch(keyPath?: string|array, update: function)
 ```
 
 - `keyPath` is optional, it means which state (should must be an object) node you want to change.
-- `fn` is a function, which receives the state (or picked node) to be modified and returns the new value
+- `update` is a function, which receives the state (or picked node) to be modified and returns the new value
 
 ```js
 // normal usage
@@ -173,10 +173,11 @@ export function changeAge(dispatch, age) {
 
 ```js
 // app.js
-import { combineStore } from 'react-immut'
+import { createStore } from 'react-immut'
 import * as Asome from './components/a-some/store.js'
 
-const store = combineStore({
+// set namespaces into the second parameter
+const store = createStore(null, {
   Asome,
 })
 
