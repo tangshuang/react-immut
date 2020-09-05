@@ -104,9 +104,10 @@ export class Store {
 }
 
 const defaultContext = createContext()
+const defaultStore = new Store({})
 
 export function Provider(props) {
-  const { store = new Store({}), context = defaultContext, children } = props
+  const { store = defaultStore, context = defaultContext, children } = props
   const [state, setState] = useState(store.state)
 
   const value = useMemo(() => {
@@ -116,8 +117,6 @@ export function Provider(props) {
 
   useEffect(() => {
     const unsubscribe = store.subscribe((next) => setState(next))
-    // patch store to context
-    context.$$store = store
     return unsubscribe
   }, [])
 
@@ -174,26 +173,18 @@ export function useStore(keyPath, { context = defaultContext } = {}) {
   return [state2, dispatch2]
 }
 
-export function createStore(initState, combined) {
+export function createStore(initState, namespaces) {
   const store = new Store(initState || {})
-  if (combined) {
-    store.combine(combined)
+  if (namespaces) {
+    store.combine(namespaces)
   }
   return store
 }
 
-export function combine(namespaces, { context = defaultContext } = {}) {
-  const store = context.$$store
-  if (!store) {
-    return
-  }
+export function combine(namespaces, store = defaultStore) {
   store.combine(namespaces)
 }
 
-export function debug(switchto, { context = defaultContext } = {}) {
-  const store = context.$$store
-  if (!store) {
-    return
-  }
+export function debug(switchto, store = defaultStore) {
   store.debug = !!switchto
 }
