@@ -49,6 +49,10 @@ export class Store {
       fn(next, prev)
     })
 
+    if (this.debug) {
+      console.log('[ReactImmut]: state has change.', { prev, next, time: new Date() })
+    }
+
     return this
   }
   combine(namespaces) {
@@ -56,7 +60,9 @@ export class Store {
 
     const patchState = (name, initState) => {
       if (name in state) {
-        console.info(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
+        if (this.debug) {
+          console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
+        }
         return
       }
       state[name] = initState
@@ -64,6 +70,9 @@ export class Store {
 
     const patchDispatch = (name, actions) => {
       if (name in dispatch) {
+        if (this.debug) {
+          console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
+        }
         return
       }
 
@@ -179,4 +188,12 @@ export function combine(namespaces, { context = defaultContext } = {}) {
     return
   }
   store.combine(namespaces)
+}
+
+export function debug(switchto, { context = defaultContext } = {}) {
+  const store = context.$$store
+  if (!store) {
+    return
+  }
+  store.debug = !!switchto
 }
