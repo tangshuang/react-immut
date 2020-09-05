@@ -147,7 +147,7 @@ export function combineStore(namespaces) {
         const update = (fn) => {
           dispatch(name, fn)
         }
-        action(update, ...args)
+        return action(update, ...args)
       }
       dispatch[name] = dispatch[name] || {}
       dispatch[name][key] = fn
