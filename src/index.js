@@ -56,6 +56,7 @@ export class Store {
 
     const patchState = (name, initState) => {
       if (name in state) {
+        console.info(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
         return
       }
       state[name] = initState
@@ -96,7 +97,7 @@ export class Store {
 const defaultContext = createContext()
 
 export function Provider(props) {
-  const { store, context = defaultContext, children } = props
+  const { store = new Store({}), context = defaultContext, children } = props
   const [state, setState] = useState(store.state)
 
   const value = useMemo(() => {
@@ -106,6 +107,8 @@ export function Provider(props) {
 
   useEffect(() => {
     const unsubscribe = store.subscribe((next) => setState(next))
+    // patch store to context
+    context.$$store = store
     return unsubscribe
   }, [])
 
@@ -168,4 +171,12 @@ export function createStore(initState, combined) {
     store.combine(combined)
   }
   return store
+}
+
+export function combine(namespaces, { context = defaultContext } = {}) {
+  const store = context.$$store
+  if (!store) {
+    return
+  }
+  store.combine(namespaces)
 }
