@@ -75,19 +75,33 @@ Or:
 
 ```js
 function MyComponent() {
-  const [_, dispatch] = useStore('name')
+  const [name, dispatch] = useStore('name')
   const changeName = (newName) => {
     dispatch(() => newName)
   }
 
   // // or:
-  // const [_, dispatch] = useState()
+  // const [{ name }, dispatch] = useState()
   // const changeName = (newName) => {
   //   dispatch(state => state.name = newName)
   // }
 
   return <span onClick={changeName}>{name}</span>
 }
+```
+
+## Provider
+
+```
+<Provider store? context?>
+```
+
+When you did not pass a `store` and `context` it will use default built in store and context.
+
+```jsx
+<Provider>
+  <App />
+</Provider>
 ```
 
 ## dispatch(keyPath?, update)
@@ -235,6 +249,123 @@ function Asome(props) {
       <button onClick={() => changeAge(20)}>change age</button>
     </>
   )
+}
+```
+
+**combine**
+
+```
+combine(namespaces, { store?, context?, hooks? })
+```
+
+```js
+import { combine } from 'react-immut'
+
+const connect = combine({
+  Aname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+  Bname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+}, {
+  store, // use you use a custom store, you should must pass this parameter
+})
+
+const mapStateToProps = (state) => {
+  const { Aname, Bname } = state
+  return {
+    Aname,
+    Bname,
+  }
+}
+
+const mapDispatchToProps = (dispatch) => {
+  const { Aname, Bname } = dispatch
+  const { fnA: A_fnA, fnB: A_fnB } = Aname
+  const { fnA: B_fnA, fnB: B_fnB } = Bname
+
+  return {
+    A_fnA,
+    A_fnB,
+    B_fnA,
+    B_fnB,
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(MyComponent)
+
+function MyComponent(props) {
+  const {
+    Aname,
+    Bname,
+    A_fnA,
+    A_fnB,
+    B_fnA,
+    B_fnB,
+  } = props
+  // ...
+}
+```
+
+Or use hooks:
+
+```js
+import { combine, useStore } from 'react-immut'
+
+combine({
+  Aname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+  Bname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+}, {
+  store,
+})
+
+function MyComponent() {
+  const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useStore('Aname')
+  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useBname('Bname')
+  // ...
+}
+```
+
+Or:
+
+```js
+import { combine } from 'react-immut'
+
+// get hook functions directly
+const { useAname, useBname } = combine({
+  Aname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+  Bname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+}, {
+  store,
+  context, // if you use custom context, you should must pass this parameter
+  hooks: true, // notice this line
+})
+
+function MyComponent() {
+  const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useAname()
+  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useBname()
+  // ...
 }
 ```
 

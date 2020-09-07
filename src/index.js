@@ -59,23 +59,10 @@ export class Store {
     const { dispatch, state } = this
 
     const patchState = (name, initState) => {
-      if (name in state) {
-        if (this.debug) {
-          console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
-        }
-        return
-      }
       state[name] = initState
     }
 
     const patchDispatch = (name, actions) => {
-      if (name in dispatch) {
-        if (this.debug) {
-          console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
-        }
-        return
-      }
-
       dispatch[name] = dispatch[name] || {}
 
       Object.keys(actions).forEach((key) => {
@@ -94,6 +81,13 @@ export class Store {
     }
 
     Object.keys(namespaces).forEach((name) => {
+      if (name in state) {
+        if (this.debug) {
+          console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
+        }
+        return
+      }
+
       const { state, ...actions } = namespaces[name]
       patchState(name, state)
       patchDispatch(name, actions)
@@ -181,10 +175,23 @@ export function createStore(initState, namespaces) {
   return store
 }
 
-export function combine(namespaces, store = defaultStore) {
+export function combine(namespaces, { store = defaultStore, context = defaultContext, hooks } = {}) {
   store.combine(namespaces)
+
+  if (hooks) {
+    const names = Object.keys(namespaces)
+    const hookFns = {}
+    names.forEach((name) => {
+      const key = 'use' + name.replace(name[0], name[0].toUpperCase())
+      hookFns[key] = () => useStore(name, { context })
+    })
+    return hookFns
+  }
+  else {
+    return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, { context })
+  }
 }
 
-export function debug(switchto, store = defaultStore) {
+export function debug(switchto, { store = defaultStore } = {}) {
   store.debug = !!switchto
 }
