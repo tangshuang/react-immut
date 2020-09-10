@@ -209,6 +209,14 @@ export function combine(namespaces, { store = defaultStore, context = defaultCon
   }
 }
 
+export function dispatch(keyPath, update, { store = defaultStore } = {}) {
+  store.dispatch(keyPath, update)
+}
+
+export function subscribe(fn, { store = defaultStore } = {}) {
+  return store.subscribe(fn)
+}
+
 export function debug(switchto, { store = defaultStore } = {}) {
   store.debug = !!switchto
 }
