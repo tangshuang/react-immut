@@ -23,11 +23,12 @@ function Person() {
 }
 
 function Editor() {
-  const [_, { changeName, changeAge }] = useStore('some')
+  const [{ age, name }, { changeName, changeAge }] = useStore('some')
+  const names = ['Jimy', 'Tomy', 'Lucy', 'Dohpi']
   return (
     <>
-      <button onClick={() => changeName(['Jimy', 'Tomy'][+new Date() % 2])}>change name</button>
-      <button onClick={() => changeAge([20, 30][+new Date() % 2])}>change age</button>
+      <button onClick={() => changeName(names[names.indexOf(name) + 1] || 'Tom')}>change name</button>
+      <button onClick={() => changeAge(age + 1)}>change age</button>
     </>
   )
 }

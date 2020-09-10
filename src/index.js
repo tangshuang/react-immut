@@ -1,11 +1,10 @@
 import React, {
-  Component,
   createContext,
   useState,
-  useCallback,
   useMemo,
   useEffect,
   useContext,
+  memo,
 } from 'react'
 import produce from 'immer'
 import { parse, assign } from 'ts-fns/cjs/key-path'
@@ -53,8 +52,6 @@ export class Store {
     if (this.debug) {
       console.log('[ReactImmut]: state has change.', { prev, next, time: new Date() })
     }
-
-    return this
   }
   combine(namespaces) {
     const { dispatch, state: storeState } = this
@@ -97,8 +94,6 @@ export class Store {
       patchState(name, state)
       patchDispatch(name, actions)
     })
-
-    return this
   }
 }
 
@@ -115,41 +110,12 @@ export function Provider(props) {
   }, [state])
 
   useEffect(() => {
-    const unsubscribe = store.subscribe((next) => setState(next))
+    const unsubscribe = store.subscribe(next => setState(next))
     return unsubscribe
   }, [])
 
   const { Provider } = context
-
   return <Provider value={value}>{children}</Provider>
-}
-
-export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, { context = defaultContext } = {}) {
-  return function(C) {
-    const { Consumer } = context
-    const componentName = C.name
-    class ConnectedComponent extends Component {
-      static name = componentName
-      render() {
-        const props = this.props
-        return (
-          <Consumer>{
-            ({ state, dispatch }) => {
-              const stateProps = mapStateToProps ? mapStateToProps(state, props) : {}
-              const dispatchProps = mapDispatchToPorps ? mapDispatchToPorps(dispatch, props) : {}
-              const combinedProps = mergeProps ? mergeProps(stateProps, dispatchProps, props) : {
-                ...stateProps,
-                ...dispatchProps,
-                ...props,
-              }
-              return <C {...combinedProps} />
-            }
-          }</Consumer>
-        )
-      }
-    }
-    return ConnectedComponent
-  }
 }
 
 export function useStore(keyPath, { context = defaultContext, store = defaultStore } = {}) {
@@ -158,23 +124,23 @@ export function useStore(keyPath, { context = defaultContext, store = defaultSto
   const { state, dispatch } = hasContext ? $context : store
   const [_, forceUpdate] = useState(null)
 
-  const state2 = keyPath ? parse(state, keyPath) : state
-  const dispatch2 = useCallback((update) => {
-    if (keyPath) {
-      dispatch(keyPath, update)
-    }
-    else {
-      dispatch(update)
-    }
-  }, [keyPath])
-
   useEffect(() => {
     if (!hasContext) {
-      return store.subscribe(() => {
-        forceUpdate({})
+      return store.subscribe((next, prev) => {
+        if (keyPath) {
+          if (parse(next, keyPath) !== parse(prev, keyPath)) {
+            forceUpdate({})
+          }
+        }
+        else {
+          forceUpdate({})
+        }
       })
     }
-  }, [keyPath])
+  }, [keyPath, hasContext])
+
+  const state2 = keyPath ? parse(state, keyPath) : state
+  const dispatch2 = keyPath ? update => dispatch(keyPath, update) : dispatch
 
   // patch dispatchers to dispatch
   if (typeof keyPath === 'string' && dispatch[keyPath]) {
@@ -182,6 +148,30 @@ export function useStore(keyPath, { context = defaultContext, store = defaultSto
   }
 
   return [state2, dispatch2]
+}
+
+export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, options) {
+  return function(C) {
+    const Component = memo(C)
+    const componentName = C.name
+    const ConnectedComponent = function(props) {
+      const [state, dispatch] = useStore(null, options)
+      const stateProps = mapStateToProps ? mapStateToProps(state, props) : {}
+      const dispatchProps = mapDispatchToPorps ? mapDispatchToPorps(dispatch, props) : {}
+      const combinedProps = mergeProps ? mergeProps(stateProps, dispatchProps, props) : {
+        ...props,
+        ...stateProps,
+        ...dispatchProps,
+      }
+      return <Component {...combinedProps} />
+    }
+    Object.defineProperty(ConnectedComponent, 'name', {
+      value: componentName,
+      writable: true,
+      configurable: true,
+    })
+    return ConnectedComponent
+  }
 }
 
 export function createStore(initState, namespaces) {
