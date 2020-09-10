@@ -14,13 +14,15 @@ npm i react-immut
 import { createStore, Provider, connect, useStore } from 'react-immut'
 ```
 
-**Step 1: create a store.**
+### Typical Usage
+
+**Step 1: create a store**
 
 ```js
 const store = createStore({ name: 'Tom' })
 ```
 
-**Step 2: wrap with Provider.**
+**Step 2: wrap with Provider**
 
 ```js
 function App() {
@@ -33,7 +35,7 @@ function App() {
 }
 ```
 
-**Step 3: use connect/useStore.**
+**Step 3: use connect & mapStateToProps**
 
 ```js
 function MyComponent(props) {
@@ -49,16 +51,7 @@ const mapStateToProps = (state) => {
 export default connect(mapStateToProps)(MyComponent)
 ```
 
-Or:
-
-```js
-function MyComponent() {
-  const [name] = useStore('name')
-  return <span>{name}</span>
-}
-```
-
-**Step 4: dispatch change.**
+**Step 4: use mapDispatchToProps**
 
 ```js
 const mapDispatchToProps = (dispatch) => {
@@ -68,25 +61,22 @@ const mapDispatchToProps = (dispatch) => {
   return { changeName }
 }
 
-export default connect(null, mapDispatchToProps)(MyComponent)
+export default connect(mapStateToProps, mapDispatchToProps)(MyComponent)
 ```
 
-Or:
+### Hooks Usage
 
 ```js
 function MyComponent() {
-  const [name, dispatch] = useStore('name')
-  const changeName = (newName) => {
-    dispatch(() => newName)
-  }
+  const [state, dispatch] = useStore() // without any reducer definition, Provider warpping, or any other conditions, just `useStore`
 
-  // // or:
-  // const [{ name }, dispatch] = useState()
-  // const changeName = (newName) => {
-  //   dispatch(state => state.name = newName)
-  // }
+  const changeName = () => dispatch(state => {
+    state.name = 'jamy'
+  })
 
-  return <span onClick={changeName}>{name}</span>
+  return (
+    <span onClick={changeName}>{state.name}</span>
+  )
 }
 ```
 
@@ -140,19 +130,46 @@ dispatch('books[0].name', name => {
 
 Learn more about the deep knowledge from [immer](https://github.com/immerjs/immer).
 
+```js
+// magic key=>value
+dispatch('books[0].price', 12.4)
+```
+
 ## useStore(keyPath)
 
-*Notice that, you should use `useStore` hook function inside `Provider`, or it will read none value.*
-
-When you did not pass `keyPath`, you will get the whole state and dispatch which operate the whole state.
+If you do not pass `keyPath`, you will get the whole state and dispatch which operate the whole state.
 
 ```js
 function MyComponent() {
   const [state, dispatch] = useStore()
+
+  const changeName = () => {
+    dispatch(state => {
+      // state is a draft of whole global state
+      state.name = 'tomy'
+    })
+  }
 }
 ```
 
+```js
+function MyComponent() {
+  const [book, dispatch] = useStore('books[0]')
+
+  const changeName = () => {
+    dispatch(book => {
+      // book is a part of whole global state, which is read from state.books[0]
+      book.price = 12.5
+    })
+  }
+}
+```
+
+*`useStore` can be used without `Provider` wrapping.*
+
 ## Ajax
+
+You can call dispatch directly when you can invoke dispatch.
 
 ```js
 fetch(url).then(res => res.json()).then(data => dispatch(state => {
@@ -167,6 +184,7 @@ In many situations, developers want to split the whole state and put component's
 
 ```js
 // components/a-some/store.js
+
 export const state = {
   name: 'Tom',
   age: 10,
@@ -187,10 +205,12 @@ export function changeAge(dispatch, age) {
 
 ```js
 // app.js
+
 import { createStore } from 'react-immut'
-import * as Asome from './components/a-some/store.js'
+import * as Asome from './components/a-some/store.js' // import this namespace as Asome (its name)
 
 // set namespaces into the second parameter
+// the first parameter should be an object or null
 const store = createStore(null, {
   Asome,
 })
@@ -208,6 +228,7 @@ export default function App() {
 
 ```js
 // components/a-some/index.jsx
+
 import { connect } from 'react-immut'
 
 const mapStateToProps = (state) => {

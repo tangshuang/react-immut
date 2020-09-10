@@ -15,6 +15,7 @@ export class Store {
     this.state = initState
     this.subscribers = []
     this.dispatch = this.dispatch.bind(this)
+    this.debug = false
   }
   getState() {
     return this.state
@@ -56,10 +57,14 @@ export class Store {
     return this
   }
   combine(namespaces) {
-    const { dispatch, state } = this
+    const { dispatch, state: storeState } = this
+
+    if (this.debug && !(storeState && typeof storeState === 'object')) {
+      console.error(`[ReactImmut]: store.combine should must use with object state, but current state is `, storeState)
+    }
 
     const patchState = (name, initState) => {
-      state[name] = initState
+      storeState[name] = initState
     }
 
     const patchDispatch = (name, actions) => {
@@ -81,7 +86,7 @@ export class Store {
     }
 
     Object.keys(namespaces).forEach((name) => {
-      if (name in state) {
+      if (name in storeState) {
         if (this.debug) {
           console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
         }
@@ -147,8 +152,12 @@ export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, { conte
   }
 }
 
-export function useStore(keyPath, { context = defaultContext } = {}) {
-  const { state, dispatch } = useContext(context)
+export function useStore(keyPath, { context = defaultContext, store = defaultStore } = {}) {
+  const $context = useContext(context)
+  const hasContext = $context && $context.state && $context.dispatch
+  const { state, dispatch } = hasContext ? $context : store
+  const [_, forceUpdate] = useState(null)
+
   const state2 = keyPath ? parse(state, keyPath) : state
   const dispatch2 = useCallback((update) => {
     if (keyPath) {
@@ -156,6 +165,14 @@ export function useStore(keyPath, { context = defaultContext } = {}) {
     }
     else {
       dispatch(update)
+    }
+  }, [keyPath])
+
+  useEffect(() => {
+    if (!hasContext) {
+      return store.subscribe(() => {
+        forceUpdate({})
+      })
     }
   }, [keyPath])
 
