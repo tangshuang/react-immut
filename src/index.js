@@ -200,7 +200,7 @@ export function combine(namespaces, { store = defaultStore, context = defaultCon
     const hookFns = {}
     names.forEach((name) => {
       const key = 'use' + name.replace(name[0], name[0].toUpperCase())
-      hookFns[key] = () => useStore(name, { context })
+      hookFns[key] = () => useStore(name, { context, store })
     })
     return hookFns
   }
