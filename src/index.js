@@ -74,10 +74,19 @@ export class Store {
           return
         }
         const fn = (...args) => {
-          const update = (fn) => {
-            dispatch(name, fn)
+          const dispatch2 = (keyPath, update) => {
+            if (arguments.length === 1) {
+              update = keyPath
+              keyPath = ''
+            }
+
+            const chain = Array.isArray(keyPath) ? [name, ...keyPath]
+              : keyPath ? [name, keyPath]
+              : [name]
+
+            dispatch(chain, update)
           }
-          return action(update, ...args)
+          return action(dispatch2, ...args)
         }
         dispatch[name][key] = fn
       })
