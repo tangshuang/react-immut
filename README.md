@@ -1,6 +1,6 @@
 # REACT IMMUT
 
-React immutable state management.
+React immutable global state management.
 
 ## Install
 
@@ -66,6 +66,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(MyComponent)
 
 ### Hooks Usage
 
+**Step 3. useStore hook**
+
 ```js
 function MyComponent() {
   const [state, dispatch] = useStore() // without any reducer definition, Provider warpping, or any other conditions, just `useStore`
@@ -93,6 +95,8 @@ When you did not pass a `store` and `context` it will use default built in store
   <App />
 </Provider>
 ```
+
+*Notice: `Provider` in react-immut is optional, you can use `useStore` or `connect` directly (using default global store).*
 
 ## dispatch(keyPath?, update)
 
@@ -167,7 +171,7 @@ function MyComponent() {
 
 *`useStore` can be used without `Provider` wrapping.*
 
-## Ajax
+## Async Operation
 
 You can call dispatch directly when you can invoke dispatch.
 
