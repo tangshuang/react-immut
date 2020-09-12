@@ -59,10 +59,11 @@ export class Store {
 
     if (this.debug && !(storeState && typeof storeState === 'object')) {
       console.error(`[ReactImmut]: store.combine should must use with object state, but current state is `, storeState)
+      this.state = {}
     }
 
     const patchState = (name, initState) => {
-      storeState[name] = initState
+      this.state[name] = initState
     }
 
     const patchDispatch = (name, actions) => {
@@ -93,7 +94,7 @@ export class Store {
     }
 
     Object.keys(namespaces).forEach((name) => {
-      if (this.debug && name in storeState) {
+      if (this.debug && name in this.state) {
         console.error(`[ReactImmut]: namespace '${name}' has been registered before, will be overrided.`)
       }
 
@@ -196,9 +197,7 @@ export function createStore(initState, namespaces) {
   return store
 }
 
-export function combine(namespaces, { store = defaultStore, hooks } = {}) {
-  store.combine(namespaces)
-
+function create(store, hooks) {
   const options = { context: null, store }
   if (hooks) {
     const names = Object.keys(namespaces)
@@ -212,6 +211,16 @@ export function combine(namespaces, { store = defaultStore, hooks } = {}) {
   else {
     return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
   }
+}
+
+export function init(initState, { store = defaultStore, hooks } = {}) {
+  store.state = initState
+  return create(store, hooks)
+}
+
+export function combine(namespaces, { store = defaultStore, hooks } = {}) {
+  store.combine(namespaces)
+  return create(store, hooks)
 }
 
 export function dispatch(keyPath, update, { store = defaultStore } = {}) {
