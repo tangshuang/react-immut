@@ -57,13 +57,15 @@ export class Store {
   combine(namespaces) {
     const { dispatch, state: storeState } = this
 
-    if (this.debug && !(storeState && typeof storeState === 'object')) {
-      console.error(`[ReactImmut]: store.combine should must use with object state, but current state is `, storeState)
-      this.state = {}
+    if (!(storeState && typeof storeState === 'object')) {
+      if (this.debug) {
+        console.error(`[ReactImmut]: store.combine should must use with object state, but current state is `, storeState)
+      }
+      return
     }
 
-    const patchState = (name, initState) => {
-      this.state[name] = initState
+    const patchState = (name, state2) => {
+      storeState[name] = state2
     }
 
     const patchDispatch = (name, actions) => {
@@ -94,7 +96,7 @@ export class Store {
     }
 
     Object.keys(namespaces).forEach((name) => {
-      if (this.debug && name in this.state) {
+      if (this.debug && name in storeState) {
         console.error(`[ReactImmut]: namespace '${name}' has been registered before, will be overrided.`)
       }
 
