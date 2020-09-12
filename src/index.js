@@ -31,7 +31,7 @@ export class Store {
     }
 
     const prev = this.state
-    const next = produce(this.state, (state) => {
+    const next = produce(prev, (state) => {
       if (keyPath) {
         const node = parse(state, keyPath)
         const res = typeof update === 'function' ? update(node) : update
@@ -44,6 +44,7 @@ export class Store {
         return typeof update === 'function' ? update(state) : update
       }
     })
+
     this.state = next
     this.subscribers.forEach((fn) => {
       fn(next, prev)
@@ -83,11 +84,8 @@ export class Store {
     }
 
     Object.keys(namespaces).forEach((name) => {
-      if (name in storeState) {
-        if (this.debug) {
-          console.error(`[ReactImmut]: namespace '${name}' has been registered before, will not be registered again.`)
-        }
-        return
+      if (this.debug && name in storeState) {
+        console.error(`[ReactImmut]: namespace '${name}' has been registered before, will be overrided.`)
       }
 
       const { state, ...actions } = namespaces[name]
@@ -118,25 +116,32 @@ export function Provider(props) {
   return <Provider value={value}>{children}</Provider>
 }
 
-export function useStore(keyPath, { context = defaultContext, store = defaultStore } = {}) {
-  const $context = useContext(context)
-  const hasContext = $context && $context.state && $context.dispatch
-  const { state, dispatch } = hasContext ? $context : store
-  const [_, forceUpdate] = useState(null)
+export function useStore(keyPath, options = {}) {
+  // only use options once
+  const { context, store } = useMemo(() => {
+    const { context = defaultContext, store = defaultStore } = options
+    return { context, store }
+  }, [])
 
+  const ctx = useContext(context || {})
+  const hasContext = ctx && ctx.state && ctx.dispatch
+  const { state, dispatch } = hasContext ? ctx : store
+
+  const [_, forceUpdate] = useState(null)
   useEffect(() => {
-    if (!hasContext) {
-      return store.subscribe((next, prev) => {
-        if (keyPath) {
-          if (parse(next, keyPath) !== parse(prev, keyPath)) {
-            forceUpdate({})
-          }
-        }
-        else {
+    if (hasContext) {
+      return
+    }
+    return store.subscribe((next, prev) => {
+      if (keyPath) {
+        if (parse(next, keyPath) !== parse(prev, keyPath)) {
           forceUpdate({})
         }
-      })
-    }
+      }
+      else {
+        forceUpdate({})
+      }
+    })
   }, [keyPath, hasContext])
 
   const state2 = keyPath ? parse(state, keyPath) : state
@@ -182,20 +187,21 @@ export function createStore(initState, namespaces) {
   return store
 }
 
-export function combine(namespaces, { store = defaultStore, context = defaultContext, hooks } = {}) {
+export function combine(namespaces, { store = defaultStore, hooks } = {}) {
   store.combine(namespaces)
 
+  const options = { context: null, store }
   if (hooks) {
     const names = Object.keys(namespaces)
     const hookFns = {}
     names.forEach((name) => {
       const key = 'use' + name.replace(name[0], name[0].toUpperCase())
-      hookFns[key] = () => useStore(name, { context, store })
+      hookFns[key] = () => useStore(name, options)
     })
     return hookFns
   }
   else {
-    return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, { context })
+    return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
   }
 }
 

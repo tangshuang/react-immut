@@ -32,9 +32,7 @@ function EditModal(props) {
     changeTitle(0, 'New Title')
   }
   const modify = () => {
-    dispatch((todo) => {
-      return 'Another Title'
-    })
+    dispatch('Another Title')
   }
 
   return (

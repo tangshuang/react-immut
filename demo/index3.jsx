@@ -1,10 +1,10 @@
 import React from 'react'
-import { useStore, combine } from '../src/index.js'
+import { combine } from '../src/index.js'
 import * as some from './some/some.store.js'
 
-combine({
+const { useSome } = combine({
   some,
-})
+}, { hooks: true })
 
 export default function App() {
   return (
@@ -18,12 +18,12 @@ export default function App() {
 }
 
 function Person() {
-  const [some] = useStore('some')
+  const [some] = useSome()
   return <span>{some.name}: {some.age}</span>
 }
 
 function Editor() {
-  const [{ age, name }, { changeName, changeAge }] = useStore('some')
+  const [{ age, name }, { changeName, changeAge }] = useSome()
   const names = ['Jimy', 'Tomy', 'Lucy', 'Dohpi']
   return (
     <>
