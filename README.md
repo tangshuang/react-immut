@@ -280,12 +280,37 @@ function Asome(props) {
 **combine**
 
 ```
-combine(namespaces, { store?, context?, hooks? })
+combine(namespaces, { store?, hooks? })
 ```
 
 ```js
 import { combine } from 'react-immut'
 
+const { useAname, useBname } = combine({
+  // named namespace
+  Aname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+  // symbol namespace
+  [Symbol('Bname')]: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+})
+
+function MyComponent() {
+  const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useAname()
+  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useBname()
+  // ...
+}
+```
+
+`hooks` parameter default is `true`, if you set it to be `false`, you will get a `connect` function:
+
+```js
 const connect = combine({
   Aname: {
     state: {}
@@ -298,7 +323,8 @@ const connect = combine({
     fnB() {},
   },
 }, {
-  store, // use you use a custom store, you should must pass this parameter
+  // store, // use you use a custom store, you should must pass this parameter
+  hooks: false, // notice here
 })
 
 const mapStateToProps = (state) => {
@@ -337,7 +363,7 @@ function MyComponent(props) {
 }
 ```
 
-Or use hooks:
+Namespaces are registered into global state, you can reuse them again by using `useStore`:
 
 ```js
 import { combine, useStore } from 'react-immut'
@@ -353,43 +379,11 @@ combine({
     fnA() {},
     fnB() {},
   },
-}, {
-  store,
 })
 
 function MyComponent() {
   const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useStore('Aname')
-  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useBname('Bname')
-  // ...
-}
-```
-
-Or:
-
-```js
-import { combine } from 'react-immut'
-
-// get hook functions directly
-const { useAname, useBname } = combine({
-  Aname: {
-    state: {}
-    fnA() {},
-    fnB() {},
-  },
-  Bname: {
-    state: {}
-    fnA() {},
-    fnB() {},
-  },
-}, {
-  store,
-  context, // if you use custom context, you should must pass this parameter
-  hooks: true, // notice this line
-})
-
-function MyComponent() {
-  const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useAname()
-  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useBname()
+  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useStore('Bname')
   // ...
 }
 ```

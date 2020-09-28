@@ -199,30 +199,37 @@ export function createStore(initState, namespaces) {
   return store
 }
 
-function create(store, hooks) {
+function create(store, namespaces, hooks) {
   const options = { context: null, store }
   if (hooks) {
-    const names = Object.keys(namespaces)
+    const names = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
     const hookFns = {}
+    const getSymbolName = (symb) => {
+      const str = symb.toString()
+      return symb.description ? symb.description : str.substring(7, str.length - 1)
+    }
     names.forEach((name) => {
-      const key = 'use' + name.replace(name[0], name[0].toUpperCase())
+      const isSymbol = typeof name === 'symbol'
+      const symb = isSymbol ? getSymbolName(name) : ''
+      const key = isSymbol ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
+        : 'use' + name.replace(name[0], name[0].toUpperCase())
       hookFns[key] = () => useStore(name, options)
     })
-    return hookFns
+    return hookFnss
   }
   else {
     return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
   }
 }
 
-export function init(initState, { store = defaultStore, hooks } = {}) {
+export function init(initState, { store = defaultStore } = {}) {
   store.state = initState
-  return create(store, hooks)
+  return create(store)
 }
 
-export function combine(namespaces, { store = defaultStore, hooks } = {}) {
+export function combine(namespaces, { store = defaultStore, hooks = true } = {}) {
   store.combine(namespaces)
-  return create(store, hooks)
+  return create(store, namespaces, hooks)
 }
 
 export function dispatch(keyPath, update, { store = defaultStore } = {}) {
