@@ -11,20 +11,53 @@ npm i react-immut
 ## Usage
 
 ```js
-import { createStore, Provider, connect, useStore } from 'react-immut'
+import { useStore } from 'react-immut'
+
+function MyComponent() {
+  const [state, dispatch] = useStore()
+  return <button onClick={() => dispatch(state => { state.some = 'new' })}>{state.some}</button>
+}
 ```
 
-### Typical Usage
+## useStore(keyPath)
 
-**Step 1: create a store**
+If you do not pass `keyPath`, you will get the whole state and dispatch which operate the whole state.
 
 ```js
+function MyComponent() {
+  const [state, dispatch] = useStore()
+
+  const changeName = () => {
+    dispatch(state => {
+      // state is a draft of whole global state
+      state.name = 'tomy'
+    })
+  }
+}
+```
+
+```js
+function MyComponent() {
+  const [book, dispatch] = useStore('books[0]')
+
+  const changeName = () => {
+    dispatch(book => {
+      // book is a part of whole global state, which is read from state.books[0]
+      book.price = 12.5
+    })
+  }
+}
+```
+
+## Typical Usage
+
+```js
+import { createStore, Provider, connect } from 'react-immut'
+
+// Step 1: create a store
 const store = createStore({ name: 'Tom' })
-```
 
-**Step 2: wrap with Provider**
-
-```js
+// Step 2: wrap with Provider
 function App() {
   return (
     <Provider store={store}>
@@ -33,27 +66,14 @@ function App() {
     </Provider>
   )
 }
-```
 
-**Step 3: use connect & mapStateToProps**
-
-```js
-function MyComponent(props) {
-  const { name } = props
-  return <span>{name}</span>
-}
+// Step 3: use connect & mapStateToProps & mapDispatchToProps
 
 const mapStateToProps = (state) => {
   const { name } = state
   return { name }
 }
 
-export default connect(mapStateToProps)(MyComponent)
-```
-
-**Step 4: use mapDispatchToProps**
-
-```js
 const mapDispatchToProps = (dispatch) => {
   const changeName = (newName) => {
     dispatch(state => state.name = newName)
@@ -61,28 +81,16 @@ const mapDispatchToProps = (dispatch) => {
   return { changeName }
 }
 
+// Step 4: connect component
 export default connect(mapStateToProps, mapDispatchToProps)(MyComponent)
-```
 
-### Hooks Usage
-
-**Step 3. useStore hook**
-
-```js
-function MyComponent() {
-  const [state, dispatch] = useStore() // without any reducer definition, Provider warpping, or any other conditions, just `useStore`
-
-  const changeName = () => dispatch(state => {
-    state.name = 'jamy'
-  })
-
-  return (
-    <span onClick={changeName}>{state.name}</span>
-  )
+function MyComponent(props) {
+  const { name } = props
+  return <span>{name}</span>
 }
 ```
 
-## Provider
+### Provider
 
 ```
 <Provider store? context?>
@@ -137,39 +145,11 @@ Learn more about the deep knowledge from [immer](https://github.com/immerjs/imme
 ```js
 // magic key=>value
 dispatch('books[0].price', 12.4)
+
+// replace whole state
+dispatch({ ... })
 ```
 
-## useStore(keyPath)
-
-If you do not pass `keyPath`, you will get the whole state and dispatch which operate the whole state.
-
-```js
-function MyComponent() {
-  const [state, dispatch] = useStore()
-
-  const changeName = () => {
-    dispatch(state => {
-      // state is a draft of whole global state
-      state.name = 'tomy'
-    })
-  }
-}
-```
-
-```js
-function MyComponent() {
-  const [book, dispatch] = useStore('books[0]')
-
-  const changeName = () => {
-    dispatch(book => {
-      // book is a part of whole global state, which is read from state.books[0]
-      book.price = 12.5
-    })
-  }
-}
-```
-
-*`useStore` can be used without `Provider` wrapping.*
 
 ## Async Operation
 
