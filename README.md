@@ -1,14 +1,29 @@
-# REACT IMMUT
+<h1 align="center"><a href="https://github.com/tangshuang/react-immut"><img src="react-immut.png" alt="react-immut" width="120" height="120"/></a></h1>
+<p align="center">The world's easiest react global state manangement.</p>
 
-React immutable global state management.
+<br />
+<br />
+<br />
 
-## Install
+<p align="center"><a href="https://github.com/tangshuang/jqvm"><img src="https://camo.githubusercontent.com/3b69fdf3e874a6cc64012c5a1a858767155a95d9/687474703a2f2f72616e646f6a732e636f6d2f696d616765732f64726f70536861646f772e706e67" width="100%"/></a></p>
+
+<br />
+<br />
+<br />
+<br />
+
+## :hear_no_evil:  What's all the react-immut?
+
+React global state management is a big topic in development. I like immutable characteristics, but I don't like the operation of getting immutable data. Luckly, [immer](https://github.com/immerjs/immer) give us a way to get immutable data very easy. Based on immer, I create react-immut to manage our global state in react applications.
+React-immut is a easy, lightweight and trending react global state manager, after you try it in 10 seconds, I belive, you will like it.
+
+## :rocket: Install
 
 ```
 npm i react-immut
 ```
 
-## Usage
+## :package: Usage
 
 ```js
 import { useStore } from 'react-immut'
@@ -19,7 +34,7 @@ function MyComponent() {
 }
 ```
 
-## useStore(keyPath)
+## :beers: useStore(keyPath)
 
 If you do not pass `keyPath`, you will get the whole state and dispatch which operate the whole state.
 
@@ -51,7 +66,7 @@ function MyComponent() {
 }
 ```
 
-## dispatch(keyPath?, update)
+## :loud_sound: dispatch(keyPath?, update)
 
 To change state, you will use `dispatch`. It receive two parameters:
 
@@ -93,7 +108,7 @@ dispatch('books[0].name', name => {
 
 Learn more about the deep knowledge from [immer](https://github.com/immerjs/immer).
 
-## Typical Usage
+## :school: Typical Usage
 
 ```js
 import { createStore, Provider, connect } from 'react-immut'
@@ -134,7 +149,7 @@ function MyComponent(props) {
 }
 ```
 
-### Provider
+### :hamburger: Provider
 
 ```
 <Provider store? context?>
@@ -150,7 +165,7 @@ When you did not pass a `store` and `context` it will use default built in store
 
 *Notice: `Provider` in react-immut is optional, you can use `useStore` or `connect` directly (using default global store).*
 
-## Combined Store
+## :art: Combined Store
 
 In many situations, developers want to split the whole state and put component's files tegother. We provide a way to implement this easily.
 
@@ -175,7 +190,7 @@ export function changeAge(dispatch, age) {
 }
 ```
 
-**use combine**
+**:santa: use combine**
 
 ```
 combine(namespaces, { store?, hooks? })
@@ -233,7 +248,7 @@ function MyComponent() {
 }
 ```
 
-**typical way createStore**
+**:pager: typical way createStore**
 
 ```js
 // app.js
@@ -290,7 +305,7 @@ function Asome(props) {
 
 In the previous code block, we use `changeName('new name')` directly the parameter will be passed into defined `changeName` as the second parameter in `store.js`.
 
-**combine**
+**:loudspeaker: combine**
 
 ```
 combine(namespaces, { store?, hooks? })
@@ -401,7 +416,7 @@ function MyComponent() {
 }
 ```
 
-**async operation**
+**:loop: async operation**
 
 You can call dispatch directly when you can invoke dispatch.
 
@@ -432,6 +447,6 @@ function MyComponent() {
 }
 ```
 
-## License
+## :see_no_evil: License
 
 MIT.
