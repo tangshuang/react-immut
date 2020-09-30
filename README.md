@@ -36,18 +36,62 @@ function MyComponent() {
 }
 ```
 
+If you pass a `keyPath`, you will get the scoped state and dispatch which operate the target state node.
+
 ```js
 function MyComponent() {
-  const [book, dispatch] = useStore('books[0]')
+  const [book, dispatchBook] = useStore('books[0]')
 
   const changeName = () => {
-    dispatch(book => {
+    dispatchBook(book => {
       // book is a part of whole global state, which is read from state.books[0]
       book.price = 12.5
     })
   }
 }
 ```
+
+## dispatch(keyPath?, update)
+
+To change state, you will use `dispatch`. It receive two parameters:
+
+```ts
+dispatch(keyPath?: string|array, update: function|any)
+```
+
+- `keyPath` is optional, it means which state (should must be an object) node you want to change.
+- `update` is a function, which receives the state (or picked node) to be modified and returns the new value
+
+```js
+// replace the whole state
+dispatch({ ... })
+
+// replace books[0] scoped state
+dispatch('books[0]', { ... })
+
+// use a function to modify the whole state
+dispatch(state => {
+  state.name = 'New Name'
+})
+
+// use a function to modify the scoped state
+dispatch('books[0]', book => {
+  book.name = 'New Name'
+})
+
+// with return value
+dispatch(state => {
+  return {
+    ...state,
+    name: 'New Name',
+  }
+})
+dispatch('books[0].name', name => {
+  return 'New Name'
+})
+```
+
+Learn more about the deep knowledge from [immer](https://github.com/immerjs/immer).
 
 ## Typical Usage
 
@@ -106,62 +150,6 @@ When you did not pass a `store` and `context` it will use default built in store
 
 *Notice: `Provider` in react-immut is optional, you can use `useStore` or `connect` directly (using default global store).*
 
-## dispatch(keyPath?, update)
-
-To change state, you will use `dispatch` method. It receive two parameters:
-
-```ts
-dispatch(keyPath?: string|array, update: function)
-```
-
-- `keyPath` is optional, it means which state (should must be an object) node you want to change.
-- `update` is a function, which receives the state (or picked node) to be modified and returns the new value
-
-```js
-// normal usage
-dispatch(state => {
-  state.name = 'New Name'
-})
-
-// with keyPath
-dispatch('books[0]', book => {
-  book.name = 'New Name'
-})
-
-// with return value
-dispatch(state => {
-  return {
-    ...state,
-    name: 'New Name',
-  }
-})
-dispatch('books[0].name', name => {
-  return 'New Name'
-})
-```
-
-Learn more about the deep knowledge from [immer](https://github.com/immerjs/immer).
-
-```js
-// magic key=>value
-dispatch('books[0].price', 12.4)
-
-// replace whole state
-dispatch({ ... })
-```
-
-
-## Async Operation
-
-You can call dispatch directly when you can invoke dispatch.
-
-```js
-fetch(url).then(res => res.json()).then(data => dispatch(state => {
-  const { name } = data
-  state.name = name
-}))
-```
-
 ## Combined Store
 
 In many situations, developers want to split the whole state and put component's files tegother. We provide a way to implement this easily.
@@ -186,6 +174,66 @@ export function changeAge(dispatch, age) {
   })
 }
 ```
+
+**use combine**
+
+```
+combine(namespaces, { store?, hooks? })
+```
+
+```js
+import { combine } from 'react-immut'
+import * as Asome from './components/a-some/store.js' // import this namespace as Asome (its name)
+
+const { useAsome } = combine({
+  Asome,
+})
+
+function MyComponent() {
+  const [state, { changeName, changeAge }] = useAsome()
+  // ...
+  return <button onClick={() => {
+    changeName('new name') // notice, we define changeName(dispatch,name) but use changeName(name)
+  }}>change name</button>
+}
+```
+
+`combine` register given namespaces into global store, and return hook functions to use namespaces.
+Namespaces are registered into global state, so that you can reuse them again by using `useStore`:
+
+```js
+import { combine, useStore } from 'react-immut'
+
+// here I do not receive the return hooks
+combine({
+  Aname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+  Bname: {
+    state: {}
+    fnA() {},
+    fnB() {},
+  },
+})
+
+function MyComponent() {
+  const [{ name, age }, { changeName, changeAge }] = useStore('Asome') // namespace is registered before
+  const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useStore('Aname')
+  const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useStore('Bname')
+  // ...
+
+  return (
+    <>
+      <button onClick={() => changeName('new name')}>change name</button>
+      <button onClick={() => changeAge(20)}>change age</button>
+    </>
+  )
+}
+```
+
+**typical way createStore**
 
 ```js
 // app.js
@@ -241,21 +289,6 @@ function Asome(props) {
 ```
 
 In the previous code block, we use `changeName('new name')` directly the parameter will be passed into defined `changeName` as the second parameter in `store.js`.
-
-`useStore` works:
-
-```js
-function Asome(props) {
-  const [{ name, age }, { changeName, changeAge }] = useStore('Asome')
-
-  return (
-    <>
-      <button onClick={() => changeName('new name')}>change name</button>
-      <button onClick={() => changeAge(20)}>change age</button>
-    </>
-  )
-}
-```
 
 **combine**
 
@@ -365,6 +398,37 @@ function MyComponent() {
   const [stateA, { fnA: A_fnA, fnB: A_fnB }] = useStore('Aname')
   const [stateB, { fnA: B_fnA, fnB: B_fnB }] = useStore('Bname')
   // ...
+}
+```
+
+**async operation**
+
+You can call dispatch directly when you can invoke dispatch.
+
+```js
+// components/a-some/store.js
+
+export const state = {
+  name: 'Tom',
+  age: 10,
+}
+
+export function updateName(dispatch) {
+  fetch(url).then(res => res.json()).then(data => dispatch(state => {
+    const { name } = data
+    state.name = name
+  }))
+}
+```
+
+```js
+// components/my-component.jsx
+
+function MyComponent() {
+  const [{ name }, { updateName }] = useStore('Asome')
+  // ..
+
+  return <button onClick={updateName}>update name</button>
 }
 ```
 
