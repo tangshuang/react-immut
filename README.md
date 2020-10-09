@@ -51,6 +51,43 @@ function MyComponent() {
 }
 ```
 
+To provide custom store, you will need `createStore` and `Provider`.
+
+```js
+import { createStore, Provider, useStore } from 'react-immut'
+
+const store = createStore({
+  name: 'tom',
+  age: 10,
+})
+
+function App() {
+  return (
+    <Provider store={store}>
+      <div class="container">
+        <h3>Some Person</h3>
+        <Person />
+      </div>
+    </Provider>
+  )
+}
+
+function Person() {
+  const [state, dispatch] = useStore() // get store from `Provider` store prop
+  const { name, age } = state
+  const grow = () => dispatch(state => {
+    // here `state` is a draft of global state
+    state.age ++
+  })
+  return (
+    <div>
+      <span>Name: {name}</span>
+      <span>Age: {age} <button onClick={grow}>Grow</button></span>
+    </div>
+  )
+}
+```
+
 If you pass a `keyPath`, you will get the scoped state and dispatch which operate the target state node.
 
 ```js
@@ -63,6 +100,8 @@ function MyComponent() {
       book.price = 12.5
     })
   }
+
+  // ...
 }
 ```
 
@@ -71,7 +110,7 @@ function MyComponent() {
 To change state, you will use `dispatch`. It receive two parameters:
 
 ```ts
-dispatch(keyPath?: string|array, update: function|any)
+dispatch(keyPath?:string|array, update:Function|any)
 ```
 
 - `keyPath` is optional, it means which state (should must be an object) node you want to change.
