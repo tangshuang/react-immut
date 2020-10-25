@@ -215,7 +215,7 @@ function create(store, namespaces, hooks) {
         : 'use' + name.replace(name[0], name[0].toUpperCase())
       hookFns[key] = () => useStore(name, options)
     })
-    return hookFnss
+    return hookFns
   }
   else {
     return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
