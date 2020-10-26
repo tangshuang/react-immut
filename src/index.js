@@ -279,7 +279,7 @@ function create(store, namespaces, hooks) {
         hookFns[key] = () => useStore(name, options)
       }
     })
-    return hookFnss
+    return hookFns
   }
   else {
     return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
