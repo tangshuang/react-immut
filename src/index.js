@@ -7,7 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign } from 'ts-fns/cjs/key-path'
+import { parse, assign } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
@@ -55,17 +55,18 @@ export class Store {
     }
   }
   combine(namespaces) {
-    const { dispatch, state: storeState } = this
+    const { dispatch, state: prevState } = this
+    const nextState = { ...prevState }
 
-    if (!(storeState && typeof storeState === 'object')) {
+    if (!(prevState && typeof prevState === 'object')) {
       if (this.debug) {
-        console.error(`[ReactImmut]: store.combine should must use with object state, but current state is `, storeState)
+        console.error(`[ReactImmut]: store.combine should must use with object state, but current state is `, prevState)
       }
       return
     }
 
     const patchState = (name, state2) => {
-      storeState[name] = state2
+      nextState[name] = state2
     }
 
     const patchDispatch = (name, actions) => {
@@ -96,13 +97,30 @@ export class Store {
     }
 
     Object.keys(namespaces).forEach((name) => {
-      if (this.debug && name in storeState) {
+      if (this.debug && name in prevState) {
         console.error(`[ReactImmut]: namespace '${name}' has been registered before, will be overrided.`)
       }
 
       const { state, ...actions } = namespaces[name]
       patchState(name, state)
       patchDispatch(name, actions)
+    })
+
+    this.state = nextState
+    this.subscribers.forEach((fn) => {
+      fn(nextState, prevState)
+    })
+  }
+  seclude(name) {
+    const { dispatch, state: prevState } = this
+    const nextState = { ...prevState }
+
+    delete dispatch[name]
+    delete nextState[name]
+
+    this.state = nextState
+    this.subscribers.forEach((fn) => {
+      fn(nextState, prevState)
     })
   }
 }
@@ -170,7 +188,6 @@ export function useStore(keyPath, options = {}) {
 export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, options) {
   return function(C) {
     const Component = memo(C)
-    const componentName = C.name
     const ConnectedComponent = function(props) {
       const [state, dispatch] = useStore(null, options)
       const stateProps = mapStateToProps ? mapStateToProps(state, props) : {}
@@ -182,11 +199,6 @@ export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, options
       }
       return <Component {...combinedProps} />
     }
-    Object.defineProperty(ConnectedComponent, 'name', {
-      value: componentName,
-      writable: true,
-      configurable: true,
-    })
     return ConnectedComponent
   }
 }
@@ -197,6 +209,55 @@ export function createStore(initState, namespaces) {
     store.combine(namespaces)
   }
   return store
+}
+
+export function applyStore(namespace, { store = defaultStore } = {}) {
+  const name = Symbol()
+  const namespaces = {
+    [name]: namespace,
+  }
+  store.combine(namespaces)
+
+  const useStore = () => {
+    const state = store.state[name]
+    const dispatch = store.dispatch[name]
+
+    const [_, forceUpdate] = useState(null)
+    useEffect(() => {
+      const unsubscribe = store.subscribe((next, prev) => {
+        if (next[name] !== prev[name]) {
+          forceUpdate({})
+        }
+      })
+      return unsubscribe
+    }, [])
+
+    return [state, dispatch]
+  }
+
+  const connect = (mapStateToProps, mapDispatchToPorps, mergeProps) => {
+    return function(C) {
+      const Component = memo(C)
+      const ConnectedComponent = function(props) {
+        const [state, dispatch] = useStore()
+        const stateProps = mapStateToProps ? mapStateToProps(state, props) : {}
+        const dispatchProps = mapDispatchToPorps ? mapDispatchToPorps(dispatch, props) : {}
+        const combinedProps = mergeProps ? mergeProps(stateProps, dispatchProps, props) : {
+          ...props,
+          ...stateProps,
+          ...dispatchProps,
+        }
+        return <Component {...combinedProps} />
+      }
+      return ConnectedComponent
+    }
+  }
+
+  const seclude = () => {
+    store.seclude(name)
+  }
+
+  return { useStore, connect, seclude }
 }
 
 function create(store, namespaces, hooks) {
@@ -211,20 +272,18 @@ function create(store, namespaces, hooks) {
     names.forEach((name) => {
       const isSymbol = typeof name === 'symbol'
       const symb = isSymbol ? getSymbolName(name) : ''
-      const key = isSymbol ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
+      const key = isSymbol && symb ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
+        : isSymbol ? ''
         : 'use' + name.replace(name[0], name[0].toUpperCase())
-      hookFns[key] = () => useStore(name, options)
+      if (key) {
+        hookFns[key] = () => useStore(name, options)
+      }
     })
     return hookFnss
   }
   else {
     return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
   }
-}
-
-export function init(initState, { store = defaultStore } = {}) {
-  store.state = initState
-  return create(store)
 }
 
 export function combine(namespaces, { store = defaultStore, hooks = true } = {}) {
