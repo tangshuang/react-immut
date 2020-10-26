@@ -33,7 +33,10 @@ npm i react-immut
 import { createStore, Provider, connect } from 'react-immut'
 
 // Step 1: create a store
-const store = createStore({ name: 'Tom' })
+const store = createStore({
+  name: 'Tom',
+  age: 10,
+})
 
 // Step 2: wrap with Provider
 function App() {
@@ -53,9 +56,9 @@ const mapStateToProps = (state) => {
 }
 
 const mapDispatchToProps = (dispatch) => {
-  const changeName = (newName) => {
-    dispatch(state => state.name = newName)
-  }
+  const changeName = (newName) => dispatch(state => {
+    state.name = newName
+  })
   return { changeName }
 }
 
