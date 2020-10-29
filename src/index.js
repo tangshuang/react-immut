@@ -96,7 +96,8 @@ export class Store {
       })
     }
 
-    Object.keys(namespaces).forEach((name) => {
+    const names = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
+    names.forEach((name) => {
       if (this.debug && name in prevState) {
         console.error(`[ReactImmut]: namespace '${name}' has been registered before, will be overrided.`)
       }
@@ -212,7 +213,7 @@ export function createStore(initState, namespaces) {
 }
 
 export function applyStore(namespace, { store = defaultStore } = {}) {
-  const name = Symbol()
+  const name = Symbol('shared state')
   const namespaces = {
     [name]: namespace,
   }
