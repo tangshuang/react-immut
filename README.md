@@ -196,20 +196,34 @@ export const state = {
   age: 10,
 }
 
-export function changeName(dispatch, name) {
+export const changeName = (name) => (dispatch) => {
   dispatch(state => {
     state.name = name
   })
 }
 
-export function changeAge(dispatch, age) {
+export const changeAge = (age) => (dispatch) => {
   dispatch(state => {
     state.age = age
   })
 }
 ```
 
-The file expose `state` and other methods. In the method functions, the first parameter is always `dispatch` which is to operate current namespace's state. In one namespace, you have no idea to operate other namespaces' state, it is isolated. To make this namespace work in ReactImmut, you need to apply it into a store by:
+The file expose `state` and other methods.
+
+The method functions are currying functions. Method functions should return functions which contains two parameters. The first parameter is `dispatch` which is to operate current namespace's state. The second parameter is `getState` to get current namespace state.
+
+```js
+// `data` is what you passed when you invoke this method in components
+export const updateSome = (data) => (dispatch, getState) => {
+  const state = getState()
+  if (state.sex === 'F') {
+    dispatch(data)
+  }
+}
+```
+
+In one namespace, you have no idea to operate other namespaces' state, it is isolated. To make this namespace work in ReactImmut, you need to apply it into a store by:
 
 ```js
 import * as Some from './store.js'
@@ -223,6 +237,8 @@ Next, you need to use `useStore` or `connect` to call this special combined stat
 ```js
 function MyComponent() {
   const [state, { changeName, changeAge }] = useStore()
+  // ..
+  changeAge(10)
 }
 ```
 

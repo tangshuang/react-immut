@@ -7,7 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign } from 'ts-fns'
+import { parse, assign, makeKeyChain, isArray, isString } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
@@ -78,20 +78,28 @@ export class Store {
           return
         }
         const fn = (...args) => {
-          const dispatch2 = (keyPath, update) => {
-            if (arguments.length === 1) {
-              update = keyPath
-              keyPath = ''
+          const next = action(...args)
+          if (typeof next === 'function') {
+            const dispatch2 = (keyPath, update) => {
+              if (arguments.length === 1) {
+                update = keyPath
+                keyPath = ''
+              }
+
+              const chain = isArray(keyPath) ? [name, ...keyPath]
+                : isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
+                : [name]
+
+              dispatch(chain, update)
             }
-
-            const chain = Array.isArray(keyPath) ? [name, ...keyPath]
-              : keyPath ? [name, keyPath]
-              : [name]
-
-            dispatch(chain, update)
+            const getState = () => this.state[name]
+            return next(dispatch2, getState)
           }
-          return action(dispatch2, ...args)
+          else {
+            return next
+          }
         }
+
         dispatch[name][key] = fn
       })
     }
