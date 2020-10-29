@@ -5,8 +5,10 @@
   "main": "index.js",
   "dependencies": {
     "immer": "^7.0.8",
-    "react": "^16.13.1",
     "ts-fns": "^7.2.8"
+  },
+  "peerDependencies": {
+    "react": "^16.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",
