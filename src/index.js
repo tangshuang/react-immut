@@ -77,7 +77,7 @@ export class Store {
         }
 
         const chain = isArray(keyPath) ? [name, ...keyPath]
-          : isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
+          : keyPath && isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
           : [name]
 
         dispatch(chain, update)
