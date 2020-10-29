@@ -196,13 +196,13 @@ export const state = {
   age: 10,
 }
 
-export const changeName = (name) => (dispatch) => {
+export const changeName = (dispatch) => (name) => {
   dispatch(state => {
     state.name = name
   })
 }
 
-export const changeAge = (age) => (dispatch) => {
+export const changeAge = (dispatch) => (age) => {
   dispatch(state => {
     state.age = age
   })
@@ -211,11 +211,11 @@ export const changeAge = (age) => (dispatch) => {
 
 The file expose `state` and other methods.
 
-The method functions are currying functions. Method functions should return functions which contains two parameters. The first parameter is `dispatch` which is to operate current namespace's state. The second parameter is `getState` to get current namespace state.
+The method functions are currying functions. Method functions should return functions. The first parameter is `dispatch` which is to operate current namespace's state. The second parameter is `getState` to get current namespace state copy (cloned). The returned function will be what you get when use hook function in component.
 
 ```js
 // `data` is what you passed when you invoke this method in components
-export const updateSome = (data) => (dispatch, getState) => {
+export const updateSome = (dispatch, getState) => (data) => {
   const state = getState()
   if (state.sex === 'F') {
     dispatch(data)

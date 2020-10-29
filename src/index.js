@@ -7,7 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign, makeKeyChain, isArray, isString } from 'ts-fns'
+import { parse, assign, makeKeyChain, isArray, isString, clone, isFunction } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
@@ -34,14 +34,14 @@ export class Store {
     const next = produce(prev, (state) => {
       if (keyPath) {
         const node = parse(state, keyPath)
-        const res = typeof update === 'function' ? update(node) : update
+        const res = isFunction(update) ? update(node) : update
         if (typeof res !== 'undefined') {
           assign(state, keyPath, res)
         }
         return state
       }
       else {
-        return typeof update === 'function' ? update(state) : update
+        return isFunction(update) ? update(state) : update
       }
     })
 
@@ -70,6 +70,7 @@ export class Store {
     }
 
     const patchDispatch = (name, actions) => {
+      const getState = () => clone(this.state[name])
       const dispatchState = (keyPath, update) => {
         if (arguments.length === 1) {
           update = keyPath
@@ -86,22 +87,12 @@ export class Store {
 
       Object.keys(actions).forEach((key) => {
         const action = actions[key]
-        if (typeof action !== 'function') {
-          return
+        if (isFunction(action)) {
+          dispatch[name][key] = action(dispatchState, getState)
         }
-        const fn = (...args) => {
-          const next = action(...args)
-          if (typeof next === 'function') {
-
-            const getState = () => this.state[name]
-            return next(dispatchState, getState)
-          }
-          else {
-            return next
-          }
+        else {
+          dispatch[name][key] = action
         }
-
-        dispatch[name][key] = fn
       })
     }
 
