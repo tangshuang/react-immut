@@ -90,9 +90,6 @@ export class Store {
         if (isFunction(action)) {
           dispatch[name][key] = action(dispatchState, getState)
         }
-        else {
-          dispatch[name][key] = action
-        }
       })
     }
 
