@@ -70,7 +70,19 @@ export class Store {
     }
 
     const patchDispatch = (name, actions) => {
-      dispatch[name] = dispatch[name] || {}
+      const dispatchState = (keyPath, update) => {
+        if (arguments.length === 1) {
+          update = keyPath
+          keyPath = ''
+        }
+
+        const chain = isArray(keyPath) ? [name, ...keyPath]
+          : isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
+          : [name]
+
+        dispatch(chain, update)
+      }
+      dispatch[name] = dispatch[name] || dispatchState
 
       Object.keys(actions).forEach((key) => {
         const action = actions[key]
@@ -80,20 +92,9 @@ export class Store {
         const fn = (...args) => {
           const next = action(...args)
           if (typeof next === 'function') {
-            const dispatch2 = (keyPath, update) => {
-              if (arguments.length === 1) {
-                update = keyPath
-                keyPath = ''
-              }
 
-              const chain = isArray(keyPath) ? [name, ...keyPath]
-                : isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
-                : [name]
-
-              dispatch(chain, update)
-            }
             const getState = () => this.state[name]
-            return next(dispatch2, getState)
+            return next(dispatchState, getState)
           }
           else {
             return next
