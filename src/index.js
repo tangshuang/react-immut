@@ -217,14 +217,13 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
   store.combine(namespaces)
 
   const useStore = () => {
-    const state = store.state[name]
+    const [state, update] = useState(store.state[name])
     const dispatch = store.dispatch[name]
 
-    const [_, forceUpdate] = useState(null)
     useEffect(() => {
       const unsubscribe = store.subscribe((next, prev) => {
         if (next[name] !== prev[name]) {
-          forceUpdate({})
+          update(next[name])
         }
       })
       return unsubscribe
