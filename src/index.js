@@ -24,8 +24,9 @@ export class Store {
     this.subscribers.push(fn)
     return () => this.subscribers.splice(index, 1)
   }
-  dispatch(keyPath, update) {
-    if (arguments.length === 1) {
+  dispatch(...args) {
+    let [keyPath, update] = args
+    if (args.length === 1) {
       update = keyPath
       keyPath = ''
     }
@@ -71,8 +72,9 @@ export class Store {
 
     const patchDispatch = (name, actions) => {
       const getState = () => this.state[name]
-      const dispatchState = (keyPath, update) => {
-        if (arguments.length === 1) {
+      const dispatchState = (...args) => {
+        let [keyPath, update] = args
+        if (args.length === 1) {
           update = keyPath
           keyPath = ''
         }
