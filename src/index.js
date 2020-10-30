@@ -81,7 +81,7 @@ export class Store {
 
         const chain = isArray(keyPath) ? [name, ...keyPath]
           : keyPath && isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
-          : [name]
+          : name
 
         dispatch(chain, update)
       }
@@ -175,7 +175,21 @@ export function useStore(keyPath, options = {}) {
   }, [keyPath, hasContext])
 
   const state2 = keyPath ? parse(state, keyPath) : state
-  const dispatch2 = keyPath ? update => dispatch(keyPath, update) : dispatch
+  const dispatch2 = (...args) => {
+    let [subKeyPath, update] = args
+    if (args.length === 1) {
+      update = subKeyPath
+      subKeyPath = ''
+    }
+
+    const roots = keyPath ? makeKeyChain(keyPath) : []
+    const chain = isArray(subKeyPath) ? [...roots, ...subKeyPath]
+      : subKeyPath && isString(subKeyPath) ? [...roots, ...makeKeyChain(subKeyPath)]
+      : roots.length ? roots
+      : ''
+
+    dispatch(chain, update)
+  }
 
   // patch dispatchers to dispatch
   if (typeof keyPath === 'string' && dispatch[keyPath]) {
