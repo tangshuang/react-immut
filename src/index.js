@@ -7,7 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign, makeKeyChain, isArray, isString, isFunction, isSymbol } from 'ts-fns'
+import { parse, assign, makeKeyChain, isArray, isString, isFunction, isSymbol, isUndefined } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
@@ -36,7 +36,10 @@ export class Store {
       if (keyPath) {
         const node = isSymbol(keyPath) ? state[keyPath] : parse(state, keyPath)
         const res = isFunction(update) ? update(node) : update
-        if (typeof res !== 'undefined') {
+        if (!isUndefined(res) && isSymbol(keyPath)) {
+          state[keyPath] = res
+        }
+        else if (!isUndefined(res)) {
           assign(state, keyPath, res)
         }
         return state
