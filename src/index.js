@@ -7,7 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign, makeKeyChain, isArray, isString, clone, isFunction } from 'ts-fns'
+import { parse, assign, makeKeyChain, isArray, isString, isFunction } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
@@ -70,7 +70,7 @@ export class Store {
     }
 
     const patchDispatch = (name, actions) => {
-      const getState = () => clone(this.state[name])
+      const getState = () => this.state[name]
       const dispatchState = (keyPath, update) => {
         if (arguments.length === 1) {
           update = keyPath
