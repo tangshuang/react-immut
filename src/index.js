@@ -7,7 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign, makeKeyChain, isArray, isString, isFunction } from 'ts-fns'
+import { parse, assign, makeKeyChain, isArray, isString, isFunction, isSymbol } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
@@ -34,7 +34,7 @@ export class Store {
     const prev = this.state
     const next = produce(prev, (state) => {
       if (keyPath) {
-        const node = parse(state, keyPath)
+        const node = isSymbol(keyPath) ? state[keyPath] : parse(state, keyPath)
         const res = isFunction(update) ? update(node) : update
         if (typeof res !== 'undefined') {
           assign(state, keyPath, res)
@@ -81,6 +81,7 @@ export class Store {
 
         const chain = isArray(keyPath) ? [name, ...keyPath]
           : keyPath && isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
+          : keyPath && isSymbol(keyPath) ? [name, keyPath]
           : name
 
         dispatch(chain, update)
@@ -164,7 +165,10 @@ export function useStore(keyPath, options = {}) {
     }
     return store.subscribe((next, prev) => {
       if (keyPath) {
-        if (parse(next, keyPath) !== parse(prev, keyPath)) {
+        if (isSymbol(keyPath) && next[keyPath] !== prev[keyPath]) {
+          forceUpdate({})
+        }
+        else if ((isArray(keyPath) || isString(keyPath)) && parse(next, keyPath) !== parse(prev, keyPath)) {
           forceUpdate({})
         }
       }
@@ -185,6 +189,7 @@ export function useStore(keyPath, options = {}) {
     const roots = keyPath ? makeKeyChain(keyPath) : []
     const chain = isArray(subKeyPath) ? [...roots, ...subKeyPath]
       : subKeyPath && isString(subKeyPath) ? [...roots, ...makeKeyChain(subKeyPath)]
+      : subKeyPath && isSymbol(subKeyPath) ? [...roots, subKeyPath]
       : roots.length ? roots
       : ''
 
