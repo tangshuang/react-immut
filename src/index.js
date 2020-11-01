@@ -1,6 +1,6 @@
 import React, {
   createContext,
-  useState,
+  useState as useReactState,
   useMemo,
   useEffect,
   useContext,
@@ -134,7 +134,7 @@ const defaultStore = new Store({})
 
 export function Provider(props) {
   const { store = defaultStore, context = defaultContext, children } = props
-  const [state, setState] = useState(store.state)
+  const [state, setState] = useReactState(store.state)
 
   const value = useMemo(() => {
     const { dispatch } = store
@@ -161,7 +161,7 @@ export function useStore(keyPath, options = {}) {
   const hasContext = ctx && ctx.state && ctx.dispatch
   const { state, dispatch } = hasContext ? ctx : store
 
-  const [_, forceUpdate] = useState(null)
+  const [_, forceUpdate] = useReactState(null)
   useEffect(() => {
     if (hasContext) {
       return
@@ -241,7 +241,7 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
   store.combine(namespaces)
 
   const useStore = () => {
-    const [state, update] = useState(store.state[name])
+    const [state, update] = useReactState(store.state[name])
     const dispatch = store.dispatch[name]
 
     useEffect(() => {
@@ -322,4 +322,19 @@ export function subscribe(fn, { store = defaultStore } = {}) {
 
 export function debug(switchto, { store = defaultStore } = {}) {
   store.debug = !!switchto
+}
+
+export function useState(initState, { store = defaultStore } = {}) {
+  const name = useMemo(() => {
+    const name = Symbol('local state')
+    store.dispatch(name, isFunction(initState) ? initState() : initState)
+    return name
+  }, [])
+
+  useEffect(() => {
+    return () => store.seclude(name)
+  }, [])
+
+  const [state, dispatch] = useStore(name, { context: null, store })
+  return [state, dispatch]
 }

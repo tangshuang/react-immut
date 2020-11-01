@@ -28,6 +28,7 @@ npm i react-immut
 - createStore, Provider, connect
 - useStore
 - applyStore
+- useState
 
 ```js
 import { createStore, Provider, connect } from 'react-immut'
@@ -274,6 +275,21 @@ function MyComponent() {
 ```
 
 Pass `keyPath` into `useStore` to attach `A` namespace, so that you can get namespace methods.
+
+## :smile: useState(initState)
+
+`React.useState` state updating will be lost in state changing collecting, so that we can not replay componet changing. So I provide a `useState` to collect local states.
+
+```js
+import { useState } from 'react-immut'
+
+function MyComponent() {
+  const [state, dispatch] = useState(0)
+  // ...
+}
+```
+
+Now, we can collect the state changing of `MyComponent` local state.
 
 ## :see_no_evil: License
 
