@@ -281,35 +281,31 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
   return { useStore, connect, seclude }
 }
 
-function create(store, namespaces, hooks) {
-  const options = { context: null, store }
-  if (hooks) {
-    const names = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
-    const hookFns = {}
-    const getSymbolName = (symb) => {
-      const str = symb.toString()
-      return symb.description ? symb.description : str.substring(7, str.length - 1)
-    }
-    names.forEach((name) => {
-      const isSymbol = typeof name === 'symbol'
-      const symb = isSymbol ? getSymbolName(name) : ''
-      const key = isSymbol && symb ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
-        : isSymbol ? ''
-        : 'use' + name.replace(name[0], name[0].toUpperCase())
-      if (key) {
-        hookFns[key] = () => useStore(name, options)
-      }
-    })
-    return hookFns
-  }
-  else {
-    return (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
-  }
-}
-
-export function combine(namespaces, { store = defaultStore, hooks = true } = {}) {
+export function combineStores(namespaces, { store = defaultStore } = {}) {
   store.combine(namespaces)
-  return create(store, namespaces, hooks)
+
+  const options = { context: null, store }
+  const names = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
+  const hookFns = {}
+  const getSymbolName = (symb) => {
+    const str = symb.toString()
+    return symb.description ? symb.description : str.substring(7, str.length - 1)
+  }
+  names.forEach((name) => {
+    const isSymbol = typeof name === 'symbol'
+    const symb = isSymbol ? getSymbolName(name) : ''
+    const key = isSymbol && symb ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
+      : isSymbol ? ''
+      : 'use' + name.replace(name[0], name[0].toUpperCase())
+    if (key) {
+      hookFns[key] = () => useStore(name, options)
+    }
+  })
+  const _connect = (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
+  return {
+    ...hookFns,
+    connect: _connect,
+  }
 }
 
 export function dispatch(keyPath, update, { store = defaultStore } = {}) {

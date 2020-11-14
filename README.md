@@ -27,7 +27,7 @@ npm i react-immut
 
 - createStore, Provider, connect
 - useStore
-- applyStore
+- applyStore, combineStores
 - useState
 
 ```js
@@ -185,9 +185,9 @@ dispatch('books[0].name', name => {
 
 Learn more about the deep knowledge from [immer](https://github.com/immerjs/immer).
 
-## :art: Combined State
+## :art: Namespace State
 
-In many situations, developers want to split the whole big state and put component and its store files tegother. We provide a way to implement this easily - A combined state namespace like this:
+In many situations, developers want to split the whole big state and put component and its store files tegother. We provide a way to implement this easily - A namespace state namespace like this:
 
 ```js
 // components/a-some/store.js
@@ -224,7 +224,9 @@ export const updateSome = (dispatch, getState) => (data) => {
 }
 ```
 
-In one namespace, you have no idea to operate other namespaces' state, it is isolated. To make this namespace work in ReactImmut, you need to apply it into a store by:
+**applyStore**
+
+In one namespace, you have no idea to operate other namespaces' state, it is isolated. To make this namespace work in ReactImmut, you need to apply it into an isolated shared store by:
 
 ```js
 import * as Some from './store.js'
@@ -233,7 +235,7 @@ import { applyStore } from 'react-immut'
 const { useStore, connect } = applyStore(Some)
 ```
 
-Next, you need to use `useStore` or `connect` to call this special combined state in components.
+Next, you need to use `useStore` or `connect` to call this special namespace state in components.
 
 ```js
 function MyComponent() {
@@ -247,7 +249,9 @@ function MyComponent() {
 connect(mapStateToProps, mapDispatchToPorps, mergeProps)(MyComponent)
 ```
 
-On the other hand, combined state can be registered into global store. In some cases, you need to provide some methods for some special global states, you should give combined states into second parameter of `createStore` like this:
+**createStore**
+
+On the other hand, namespace state can be registered into global store. In some cases, you need to provide some methods for some special global states, you should give namespace states into second parameter of `createStore` like this:
 
 ```js
 import * as A from './a.store.js'
@@ -275,6 +279,21 @@ function MyComponent() {
 ```
 
 Pass `keyPath` into `useStore` to attach `A` namespace, so that you can get namespace methods.
+
+**combineStores**
+
+`applyStore` only apply one store, and the state is shared in an isolated scope which can not be used again in global store. `combineStores` allows you to patch several states into an isolated or a global store.
+
+```js
+import { combineStores } from 'react-immut'
+
+const { useAname, useBname, connect } = combineStores({
+  Aname,
+  Bname,
+})
+```
+
+The return outputs are like `applyStore`'s, but some difference, hooks functions are named by passed names as here `useAname` `useBname` because we pass `Aname` and `Bname`. The `connect` function is not like `applyStore`'s, you can find all properties of global state in `mapStateToProps`.
 
 ## :smile: useState(initState)
 

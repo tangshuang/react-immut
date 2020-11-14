@@ -3,13 +3,13 @@ export const state = {
   age: 10,
 }
 
-export function changeName(dispatch, name) {
+export const changeName = (dispatch) => (name) => {
   dispatch(state => {
     state.name = name
   })
 }
 
-export function changeAge(dispatch, age) {
+export const changeAge = (dispatch) => (age) => {
   dispatch(state => {
     state.age = age
   })

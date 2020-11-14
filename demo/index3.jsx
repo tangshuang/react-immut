@@ -1,8 +1,8 @@
 import React from 'react'
-import { combine } from '../src/index.js'
+import { combineStores } from '../src/index.js'
 import * as some from './some/some.store.js'
 
-const { useSome } = combine({
+const { useSome } = combineStores({
   some,
 }, { hooks: true })
 
