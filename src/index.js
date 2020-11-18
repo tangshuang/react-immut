@@ -231,13 +231,14 @@ export function createStore(initState, namespaces) {
 }
 
 export function applyStore(namespace, { store = defaultStore } = {}) {
-  const name = Symbol('shared state')
+  const key = Symbol('shared state')
   const namespaces = {
-    [name]: namespace,
+    [key]: namespace,
   }
   store.combine(namespaces)
 
   const useStore = () => {
+    const { name = key } = namespace
     const [state, update] = useReactState(store.state[name])
     const dispatch = store.dispatch[name]
 
@@ -272,6 +273,7 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
   }
 
   const seclude = () => {
+    const { name = key } = namespace
     store.seclude(name)
   }
 
