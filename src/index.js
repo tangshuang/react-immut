@@ -99,13 +99,10 @@ export class Store {
       })
     }
 
-    const names = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
-    names.forEach((name) => {
-      if (this.debug && name in prevState) {
-        console.error(`[ReactImmut]: namespace '${name}' has been registered before, will be overrided.`)
-      }
+    const keys = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
+    keys.forEach((key) => {
+      const { name = key, state, ...actions } = namespaces[key]
 
-      const { state, ...actions } = namespaces[name]
       patchState(name, state)
       patchDispatch(name, actions)
     })
@@ -181,7 +178,7 @@ export function useStore(keyPath, options = {}) {
     })
   }, [keyPath, hasContext])
 
-  const state2 = keyPath ? parse(state, keyPath) : state
+  const state2 = keyPath && isSymbol(keyPath) ? state[keyPath] : keyPath ? parse(state, keyPath) : state
   const dispatch2 = (...args) => {
     let [subKeyPath, update] = args
     if (args.length === 1) {
@@ -200,7 +197,7 @@ export function useStore(keyPath, options = {}) {
   }
 
   // patch dispatchers to dispatch
-  if (typeof keyPath === 'string' && dispatch[keyPath]) {
+  if (typeof keyPath === 'string' || isSymbol(keyPath) && dispatch[keyPath]) {
     Object.assign(dispatch2, dispatch[keyPath])
   }
 
@@ -285,20 +282,21 @@ export function combineStores(namespaces, { store = defaultStore } = {}) {
   store.combine(namespaces)
 
   const options = { context: null, store }
-  const names = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
+  const keys = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
   const hookFns = {}
   const getSymbolName = (symb) => {
     const str = symb.toString()
     return symb.description ? symb.description : str.substring(7, str.length - 1)
   }
-  names.forEach((name) => {
-    const isSymbol = typeof name === 'symbol'
-    const symb = isSymbol ? getSymbolName(name) : ''
-    const key = isSymbol && symb ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
+  keys.forEach((key) => {
+    const { name = key } = namespaces[key]
+    const isSymbol = typeof key === 'symbol'
+    const symb = isSymbol ? getSymbolName(key) : ''
+    const fn = isSymbol && symb ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
       : isSymbol ? ''
-      : 'use' + name.replace(name[0], name[0].toUpperCase())
-    if (key) {
-      hookFns[key] = () => useStore(name, options)
+      : 'use' + key.replace(key[0], key[0].toUpperCase())
+    if (fn) {
+      hookFns[fn] = () => useStore(name, options)
     }
   })
   const _connect = (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
@@ -309,7 +307,11 @@ export function combineStores(namespaces, { store = defaultStore } = {}) {
 }
 
 export function dispatch(keyPath, update, { store = defaultStore } = {}) {
-  store.dispatch(keyPath, update)
+  const args = [keyPath]
+  if (!isUndefined(update)) {
+    args.push(update)
+  }
+  store.dispatch(...args)
 }
 
 export function subscribe(fn, { store = defaultStore } = {}) {

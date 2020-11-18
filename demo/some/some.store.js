@@ -1,3 +1,5 @@
+export const name = Symbol('some')
+
 export const state = {
   name: 'Tom',
   age: 10,

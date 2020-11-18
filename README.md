@@ -30,6 +30,99 @@ npm i react-immut
 - applyStore, combineStores
 - useState
 
+<details>
+<summary>1. global state: useStore</summary>
+
+```js
+import { useStore } from 'react-immut'
+
+function MyComponent() {
+  const [some = {}, dispatch] = useStore('some') // when there is not a `some` in global state, state will receive undefined
+  // ...
+}
+```
+</details>
+
+<details>
+<summary>2. shared state</summary>
+
+```js
+import { applyStore } from 'react-immut'
+
+const Some = {
+  state: [],
+  setSome: (dispatch) => (items) => {
+    dispatch(items)
+  },
+  fetchSome: (dispatch) => () => {
+    fetch(...).then(res => res.json()).then(items => dispatch(items))
+  },
+}
+
+const { useStore, connect } = applyStore(Some)
+
+export { useStore, connect } // use these functions in other files, share a store with several components
+```
+</details>
+
+<details>
+<summary>3. namespace state</summary>
+
+```js
+// some.js
+export const name = Symbol('some') // use Symbol to create unique namespace
+export const state = []
+export const setSome = (dispatch) => (items) => {
+  dispatch(items)
+}
+export const fetchSome = (dispatch) => () => {
+  fetch(...).then(res => res.json()).then(items => dispatch(items))
+}
+
+// --------------------------------------------------
+
+// componentA.jsx
+import { combineStores } from 'react-immut'
+import * as Some from './some.js' // some.js can be import anywhere to combine to global store
+
+const { useSome, connect } = combineStores({ Some })
+
+function ComponentA() {
+  const [some = {}, dispatch] = useSome() // referer to Symbol('some') namespace
+  // ...
+}
+
+// --------------------------------------------------
+
+// componentB.jsx
+import { combineStores } from 'react-immut'
+import * as One from './some.js' // some.js can be import anywhere to combine to global store
+
+const { useOne, connect } = combineStores({ One })
+
+function ComponentB() {
+  const [some = {}, dispatch] = useOne() // referer to Symbol('some') namespace
+  // ...
+}
+```
+</details>
+
+<details>
+<summary>4. local state</summary>
+
+```js
+import { useState } from 'react-immut'
+
+function MyComponent() {
+  const [state, setState] = useState(0) // enhance react useState, which will be collected by ReactImmut
+  // ...
+}
+```
+</details>
+
+<details>
+<summary>5. global state: createStore+Provider+connect</summary>
+
 ```js
 import { createStore, Provider, connect } from 'react-immut'
 
@@ -71,6 +164,10 @@ function MyComponent(props) {
   return <span>{name}</span>
 }
 ```
+</details>
+
+<details>
+<summary>1. global state: createStore+Provider+useStore</summary>
 
 ```js
 import { createStore, Provider, useStore } from 'react-immut'
@@ -106,6 +203,7 @@ function Person() {
   )
 }
 ```
+</details>
 
 ## :beers: useStore(keyPath)
 
@@ -214,6 +312,9 @@ The file expose `state` and other methods.
 
 The method functions are currying functions. Method functions should return functions. The first parameter is `dispatch` which is to operate current namespace's state. The second parameter is `getState` to get current namespace state copy (cloned). The returned function will be what you get when use hook function in component.
 
+<details>
+<summary>Example</summary>
+
 ```js
 // `data` is what you passed when you invoke this method in components
 export const updateSome = (dispatch, getState) => (data) => {
@@ -223,6 +324,7 @@ export const updateSome = (dispatch, getState) => (data) => {
   }
 }
 ```
+</details>
 
 **applyStore**
 
@@ -262,7 +364,7 @@ const combinedStates = {
   B,
 }
 
-const store = createStore(initState, combinedStates)
+const store = createStore(initState, combinedStates) // initState should must be an object
 
 <Provider store={store}> ...
 ```
@@ -309,6 +411,30 @@ function MyComponent() {
 ```
 
 Now, we can collect the state changing of `MyComponent` local state.
+
+## Replay
+
+Each `store` has `subscribe` and `dispatch` methods, so we can use them to record and replay state changes.
+
+<details>
+<summary>Example</summary>
+
+```js
+import { subscribe, dispatch, useStore } from 'react-immut'
+
+const records = []
+
+subscribe((state) => {
+  records.push({ state, time: Date.now() })
+})
+
+replayer(records, item => item.time).run((item) => {
+  dispatch(item.state)
+})
+```
+</details>
+
+
 
 ## :see_no_evil: License
 
