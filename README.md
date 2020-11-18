@@ -414,16 +414,17 @@ Each `store` has `subscribe` and `dispatch` methods, so we can use them to recor
 <summary>Example</summary>
 
 ```js
-import { subscribe, dispatch, useStore } from 'react-immut'
+import { createStore } from 'react-immut'
 
+const store = createStore({})
 const records = []
 
-subscribe((state) => {
+store.subscribe((state) => {
   records.push({ state, time: Date.now() })
 })
 
 createReplayer(records, item => item.time).run((item) => {
-  dispatch(item.state)
+  store.dispatch(item.state)
 })
 ```
 </details>
