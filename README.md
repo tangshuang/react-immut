@@ -27,7 +27,7 @@ npm i react-immut
 
 - createStore, Provider, connect
 - useStore
-- applyStore, combineStores
+- applyStore, combineStore
 - useState
 
 <details>
@@ -66,7 +66,7 @@ export { useStore, connect } // use these functions in other files, share a stor
 </details>
 
 <details>
-<summary>3. namespace state: combineStores</summary>
+<summary>3. namespace state: combineStore</summary>
 
 ```js
 // some.js
@@ -82,10 +82,10 @@ export const fetchSome = (dispatch) => () => {
 // --------------------------------------------------
 
 // componentA.jsx
-import { combineStores } from 'react-immut'
+import { combineStore } from 'react-immut'
 import * as Some from './some.js' // some.js can be import anywhere to combine to global store
 
-const { useSome, connect } = combineStores({ Some })
+const { useSome, connect } = combineStore({ Some })
 
 function ComponentA() {
   const [some = {}, dispatch] = useSome() // referer to Symbol('some') namespace
@@ -95,10 +95,10 @@ function ComponentA() {
 // --------------------------------------------------
 
 // componentB.jsx
-import { combineStores } from 'react-immut'
+import { combineStore } from 'react-immut'
 import * as One from './some.js' // some.js can be import anywhere to combine to global store
 
-const { useOne, connect } = combineStores({ One })
+const { useOne, connect } = combineStore({ One })
 
 function ComponentB() {
   const [some = {}, dispatch] = useOne() // referer to Symbol('some') namespace
@@ -345,14 +345,14 @@ function MyComponent() {
 const ConnectedComponent = connect(mapStateToProps, mapDispatchToPorps, mergeProps)(MyComponent)
 ```
 
-**combineStores**
+**combineStore**
 
-`applyStore` only apply one store, and the state is shared in an isolated scope. `combineStores` allows you to patch several states into an isolated scope.
+`applyStore` only apply one store, and the state is shared in an isolated scope. `combineStore` allows you to patch several states into an isolated scope.
 
 ```js
-import { combineStores } from 'react-immut'
+import { combineStore } from 'react-immut'
 
-const { useAname, useBname, connect } = combineStores({
+const { useAname, useBname, connect } = combineStore({
   Aname,
   Bname,
 })

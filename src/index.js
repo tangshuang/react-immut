@@ -280,27 +280,33 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
   return { useStore, connect, seclude }
 }
 
-export function combineStores(namespaces, { store = defaultStore } = {}) {
-  store.combine(namespaces)
-
+export function combineStore(namespaces, { store = defaultStore } = {}) {
   const options = { context: null, store }
-  const keys = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
-  const hookFns = {}
   const getSymbolName = (symb) => {
     const str = symb.toString()
     return symb.description ? symb.description : str.substring(7, str.length - 1)
   }
+
+  const ns = {}
+  const hookFns = {}
+  const keys = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
+
   keys.forEach((key) => {
-    const { name = key } = namespaces[key]
-    const isSymbol = typeof key === 'symbol'
-    const symb = isSymbol ? getSymbolName(key) : ''
-    const fn = isSymbol && symb ? 'use' + symb.replace(symb[0], symb[0].toUpperCase())
-      : isSymbol ? ''
-      : 'use' + key.replace(key[0], key[0].toUpperCase())
-    if (fn) {
+    const namespace = namespaces[key]
+    const symb = isSymbol(key) ? key : Symbol(key)
+    const { name = symb } = namespace
+
+    ns[name] = namespace
+
+    const prop = getSymbolName(symb)
+    if (prop) {
+      const fn = 'use' + prop.replace(prop[0], prop[0].toUpperCase())
       hookFns[fn] = () => useStore(name, options)
     }
   })
+
+  store.combine(ns)
+
   const _connect = (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
   return {
     ...hookFns,
