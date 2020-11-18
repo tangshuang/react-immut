@@ -1,6 +1,6 @@
 {
   "name": "react-immut",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "React immutable state management.",
   "main": "index.js",
   "dependencies": {
