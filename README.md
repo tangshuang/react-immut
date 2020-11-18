@@ -44,7 +44,7 @@ function MyComponent() {
 </details>
 
 <details>
-<summary>2. shared state</summary>
+<summary>2. namespace state: applyStore</summary>
 
 ```js
 import { applyStore } from 'react-immut'
@@ -66,7 +66,7 @@ export { useStore, connect } // use these functions in other files, share a stor
 </details>
 
 <details>
-<summary>3. namespace state</summary>
+<summary>3. namespace state: combineStores</summary>
 
 ```js
 // some.js
@@ -285,32 +285,32 @@ Learn more about the deep knowledge from [immer](https://github.com/immerjs/imme
 
 ## :art: Namespace State
 
-In many situations, developers want to split the whole big state and put component and its store files tegother. We provide a way to implement this easily - A namespace state namespace like this:
+In many situations, developers want to split the whole big state and put component and its store files tegother. We provide a way to implement this easily. A namespace is a set of properties to describe the scope state like this:
 
 ```js
 // components/a-some/store.js
-
-export const state = {
+export const name = Symbol('Asome') // name of the state
+export const state = { // initial state
   name: 'Tom',
   age: 10,
 }
-
 export const changeName = (dispatch) => (name) => {
   dispatch(state => {
     state.name = name
   })
 }
-
-export const changeAge = (dispatch) => (age) => {
+export const changeAge = (dispatch, getState) => (age) => {
+  const state = getState() // get the current scope state (not the global state)
   dispatch(state => {
     state.age = age
   })
 }
 ```
 
-The file expose `state` and other methods.
+The file expose `name` `state` and other methods. This is a namespace which is used to create a special scope state in global state.
+In one namespace, you have no idea to operate other namespaces' state, it is isolated.
 
-The method functions are currying functions. Method functions should return functions. The first parameter is `dispatch` which is to operate current namespace's state. The second parameter is `getState` to get current namespace state copy (cloned). The returned function will be what you get when use hook function in component.
+The method functions are currying functions. Method functions should return functions. The first parameter is `dispatch` which is to operate current namespace's state. The second parameter is `getState` to get current namespace scope state. The returned function will be what you get when use hook function in component.
 
 <details>
 <summary>Example</summary>
@@ -328,28 +328,37 @@ export const updateSome = (dispatch, getState) => (data) => {
 
 **applyStore**
 
-In one namespace, you have no idea to operate other namespaces' state, it is isolated. To make this namespace work in ReactImmut, you need to apply it into an isolated shared store by:
+To make this namespace work in ReactImmut, you need to apply it into an isolated shared store by:
 
 ```js
 import * as Some from './store.js'
 import { applyStore } from 'react-immut'
 
 const { useStore, connect } = applyStore(Some)
-```
 
-Next, you need to use `useStore` or `connect` to call this special namespace state in components.
-
-```js
 function MyComponent() {
   const [state, { changeName, changeAge }] = useStore()
   // ..
   changeAge(10)
 }
+
+const ConnectedComponent = connect(mapStateToProps, mapDispatchToPorps, mergeProps)(MyComponent)
 ```
 
+**combineStores**
+
+`applyStore` only apply one store, and the state is shared in an isolated scope. `combineStores` allows you to patch several states into an isolated scope.
+
 ```js
-connect(mapStateToProps, mapDispatchToPorps, mergeProps)(MyComponent)
+import { combineStores } from 'react-immut'
+
+const { useAname, useBname, connect } = combineStores({
+  Aname,
+  Bname,
+})
 ```
+
+The return outputs are like `applyStore`'s, but some difference, hooks functions are named by passed names as here `useAname` `useBname` because we pass `Aname` and `Bname` as keys. The `connect` function is not like `applyStore`'s, you can find all properties of global state in `mapStateToProps`.
 
 **createStore**
 
@@ -359,17 +368,17 @@ On the other hand, namespace state can be registered into global store. In some 
 import * as A from './a.store.js'
 import * as B from './b.store.js'
 
-const combinedStates = {
+const namespaces = {
   A,
   B,
 }
 
-const store = createStore(initState, combinedStates) // initState should must be an object
+const store = createStore(initState, namespaces) // initState should must be an object
 
 <Provider store={store}> ...
 ```
 
-`combinedStates` will be merged into global state, and can be call like this:
+`namespaces` will be merged into global state, and can be call like this:
 
 ```js
 import { useStore } from 'react-immut'
@@ -381,21 +390,6 @@ function MyComponent() {
 ```
 
 Pass `keyPath` into `useStore` to attach `A` namespace, so that you can get namespace methods.
-
-**combineStores**
-
-`applyStore` only apply one store, and the state is shared in an isolated scope which can not be used again in global store. `combineStores` allows you to patch several states into an isolated or a global store.
-
-```js
-import { combineStores } from 'react-immut'
-
-const { useAname, useBname, connect } = combineStores({
-  Aname,
-  Bname,
-})
-```
-
-The return outputs are like `applyStore`'s, but some difference, hooks functions are named by passed names as here `useAname` `useBname` because we pass `Aname` and `Bname`. The `connect` function is not like `applyStore`'s, you can find all properties of global state in `mapStateToProps`.
 
 ## :smile: useState(initState)
 
@@ -433,8 +427,6 @@ createReplayer(records, item => item.time).run((item) => {
 })
 ```
 </details>
-
-
 
 ## :see_no_evil: License
 
