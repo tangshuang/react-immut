@@ -167,7 +167,7 @@ function MyComponent(props) {
 </details>
 
 <details>
-<summary>1. global state: createStore+Provider+useStore</summary>
+<summary>6. global state: createStore+Provider+useStore</summary>
 
 ```js
 import { createStore, Provider, useStore } from 'react-immut'
@@ -428,7 +428,7 @@ subscribe((state) => {
   records.push({ state, time: Date.now() })
 })
 
-replayer(records, item => item.time).run((item) => {
+createReplayer(records, item => item.time).run((item) => {
   dispatch(item.state)
 })
 ```
