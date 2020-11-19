@@ -76,21 +76,22 @@ export class Store {
     const patchDispatch = (name, actions) => {
       const getState = () => this.state[name]
       const dispatchState = (...args) => {
-        let [keyPath, update] = args
+        const [keyPath, update] = args
+
+        // pass only one param
         if (args.length === 1) {
-          update = keyPath
-          keyPath = ''
+          dispatch(keyPath)
+          return
         }
 
         const chain = isArray(keyPath) ? [name, ...keyPath]
           : keyPath && isString(keyPath) ? [name, ...makeKeyChain(keyPath)]
           : keyPath && isSymbol(keyPath) ? [name, keyPath]
           : name
-
         dispatch(chain, update)
       }
-      dispatch[name] = dispatch[name] || dispatchState
 
+      dispatch[name] = dispatch[name] || dispatchState
       Object.keys(actions).forEach((key) => {
         const action = actions[key]
         if (isFunction(action)) {
@@ -102,7 +103,6 @@ export class Store {
     const keys = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
     keys.forEach((key) => {
       const { name = key, state, ...actions } = namespaces[key]
-
       patchState(name, state)
       patchDispatch(name, actions)
     })
@@ -112,7 +112,7 @@ export class Store {
       fn(nextState, prevState)
     })
   }
-  seclude(name) {
+  remove(name) {
     const { dispatch, state: prevState } = this
     const nextState = { ...prevState }
 
@@ -231,7 +231,7 @@ export function createStore(initState, namespaces) {
 }
 
 export function applyStore(namespace, { store = defaultStore } = {}) {
-  const key = Symbol('shared state')
+  const key = Symbol('SharedState')
   const namespaces = {
     [key]: namespace,
   }
@@ -272,45 +272,45 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
     }
   }
 
-  const seclude = () => {
+  const remove = () => {
     const { name = key } = namespace
-    store.seclude(name)
+    store.remove(name)
   }
 
-  return { useStore, connect, seclude }
+  return { useStore, connect, remove }
 }
 
 export function combineStore(namespaces, { store = defaultStore } = {}) {
   const options = { context: null, store }
-  const getSymbolName = (symb) => {
-    const str = symb.toString()
-    return symb.description ? symb.description : str.substring(7, str.length - 1)
-  }
 
-  const ns = {}
+  const combined = {}
   const hookFns = {}
   const keys = Object.keys(namespaces).concat(Object.getOwnPropertySymbols(namespaces))
+  const names = []
 
   keys.forEach((key) => {
     const namespace = namespaces[key]
-    const symb = isSymbol(key) ? key : Symbol(key)
+    const symb = Symbol('SharedState')
     const { name = symb } = namespace
 
-    ns[name] = namespace
+    combined[name] = namespace
+    names.push(name)
 
-    const prop = getSymbolName(symb)
-    if (prop) {
-      const fn = 'use' + prop.replace(prop[0], prop[0].toUpperCase())
-      hookFns[fn] = () => useStore(name, options)
-    }
+    const fn = 'use' + key.replace(key[0], key[0].toUpperCase())
+    hookFns[fn] = () => useStore(name, options)
   })
 
-  store.combine(ns)
+  store.combine(combined)
 
+  const remove = () => {
+    names.forEach((name) => store.remove(name))
+  }
   const _connect = (mapStateToProps, mapDispatchToPorps, mergeProps) => connect(mapStateToProps, mapDispatchToPorps, mergeProps, options)
+
   return {
     ...hookFns,
     connect: _connect,
+    remove,
   }
 }
 
@@ -338,7 +338,7 @@ export function useState(initState, { store = defaultStore } = {}) {
   }, [])
 
   useEffect(() => {
-    return () => store.seclude(name)
+    return () => store.remove(name)
   }, [])
 
   const [state, dispatch] = useStore(name, { context: null, store })
