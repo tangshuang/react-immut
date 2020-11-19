@@ -332,7 +332,7 @@ export function debug(switchto, { store = defaultStore } = {}) {
 
 export function useState(initState, { store = defaultStore } = {}) {
   const name = useMemo(() => {
-    const name = Symbol('local state')
+    const name = Symbol('LocalState')
     store.dispatch(name, isFunction(initState) ? initState() : initState)
     return name
   }, [])
