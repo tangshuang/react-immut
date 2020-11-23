@@ -8,6 +8,7 @@ import React, {
 } from 'react'
 import produce from 'immer'
 import { parse, assign, makeKeyChain, isArray, isString, isFunction, isSymbol, isUndefined } from 'ts-fns'
+import { each } from 'immer/dist/internal'
 
 export class Store {
   constructor(initState) {
@@ -225,7 +226,12 @@ export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, options
 export function createStore(initState, namespaces) {
   const store = new Store(initState || {})
   if (namespaces) {
-    store.combine(namespaces)
+    const ns = {}
+    each(namespaces, (set, key) => {
+      const { name, ...info } = set
+      ns[key] = info
+    })
+    store.combine(ns)
   }
   return store
 }

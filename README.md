@@ -359,23 +359,25 @@ On the other hand, namespace state can be registered into global store. In some 
 import * as A from './a.store.js'
 import * as B from './b.store.js'
 
-const combinedStates = {
+const states = {
   A,
   B,
 }
 
-const store = createStore(initState, combinedStates) // initState should must be an object
+const store = createStore(initState, states) // initState should must be an object
 
 <Provider store={store}> ...
 ```
 
-`combinedStates` will be merged into global state, and can be call like this:
+*The difference between `combineStore` and `createStore` is `createStore` will ignore namespace `name` property, it will be merged into global state with given property names.*
+
+`states` will be merged into global state, and can be call like this:
 
 ```js
 import { useStore } from 'react-immut'
 
 function MyComponent() {
-  const [stateA, { changeA }] = useStore('A')
+  const [stateA, { changeA }] = useStore('A') // use A, not the `name` property of namespace
   // ...
 }
 ```
