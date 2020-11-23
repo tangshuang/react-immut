@@ -1,10 +1,10 @@
 import React from 'react'
-import { combineStores } from '../src/index.js'
+import { combineStore } from '../src/index.js'
 import * as some from './some/some.store.js'
 
-const { useSome } = combineStores({
+const { useSome } = combineStore({
   some,
-}, { hooks: true })
+})
 
 export default function App() {
   return (
