@@ -178,7 +178,9 @@ export function useStore(keyPath, options = {}) {
     })
   }, [keyPath, hasContext])
 
-  const state2 = keyPath && isSymbol(keyPath) ? state[keyPath] : keyPath ? parse(state, keyPath) : state
+  const state2 = keyPath && isSymbol(keyPath) ? state[keyPath]
+    : keyPath && isString(keyPath) ? parse(state, keyPath)
+    : state
   const dispatch2 = (...args) => {
     let [subKeyPath, update] = args
     if (args.length === 1) {
@@ -186,7 +188,9 @@ export function useStore(keyPath, options = {}) {
       subKeyPath = ''
     }
 
-    const roots = keyPath ? makeKeyChain(keyPath) : []
+    const roots = isSymbol(keyPath) ? [keyPath]
+      : keyPath && isString(keyPath) ? makeKeyChain(keyPath)
+      : []
     const chain = isArray(subKeyPath) ? [...roots, ...subKeyPath]
       : subKeyPath && isString(subKeyPath) ? [...roots, ...makeKeyChain(subKeyPath)]
       : subKeyPath && isSymbol(subKeyPath) ? [...roots, subKeyPath]
