@@ -7,8 +7,7 @@ import React, {
   memo,
 } from 'react'
 import produce from 'immer'
-import { parse, assign, makeKeyChain, isArray, isString, isFunction, isSymbol, isUndefined } from 'ts-fns'
-import { each } from 'immer/dist/internal'
+import { each, parse, assign, makeKeyChain, isArray, isString, isFunction, isSymbol, isUndefined } from 'ts-fns'
 
 export class Store {
   constructor(initState) {
