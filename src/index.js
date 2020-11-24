@@ -80,7 +80,7 @@ export class Store {
 
         // pass only one param
         if (args.length === 1) {
-          dispatch(keyPath)
+          dispatch(name, keyPath)
           return
         }
 
