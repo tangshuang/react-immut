@@ -150,7 +150,7 @@ export function Provider(props) {
 export function useStore(keyPath, options = {}) {
   // only use options once
   const { context, store } = useMemo(() => {
-    const { context = defaultContext, store = defaultStore } = options
+    const { context, store = defaultStore } = options
     return { context, store }
   }, [])
 
@@ -208,11 +208,11 @@ export function useStore(keyPath, options = {}) {
   return [state2, dispatch2]
 }
 
-export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, options) {
+export function connect(mapStateToProps, mapDispatchToPorps, mergeProps, options = {}) {
   return function(C) {
     const Component = memo(C)
     const ConnectedComponent = function(props) {
-      const [state, dispatch] = useStore(null, options)
+      const [state, dispatch] = useStore(null, { context: defaultContext, ...options })
       const stateProps = mapStateToProps ? mapStateToProps(state, props) : {}
       const dispatchProps = mapDispatchToPorps ? mapDispatchToPorps(dispatch, props) : {}
       const combinedProps = mergeProps ? mergeProps(stateProps, dispatchProps, props) : {

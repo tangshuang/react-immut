@@ -166,46 +166,12 @@ function MyComponent(props) {
 ```
 </details>
 
-<details>
-<summary>6. global state: createStore+Provider+useStore</summary>
+## :beers: useStore(keyPath, options)
 
-```js
-import { createStore, Provider, useStore } from 'react-immut'
-
-const store = createStore({
-  name: 'tom',
-  age: 10,
-})
-
-function App() {
-  return (
-    <Provider store={store}>
-      <div class="container">
-        <h3>Some Person</h3>
-        <Person />
-      </div>
-    </Provider>
-  )
-}
-
-function Person() {
-  const [state, dispatch] = useStore() // get store from `Provider` store prop
-  const { name, age } = state
-  const grow = () => dispatch(state => {
-    // here `state` is a draft of global state driven by immer
-    state.age ++
-  })
-  return (
-    <div>
-      <span>Name: {name}</span>
-      <span>Age: {age} <button onClick={grow}>Grow</button></span>
-    </div>
-  )
-}
-```
-</details>
-
-## :beers: useStore(keyPath)
+- keyPath: the key path of state node in global state
+- options:
+  - store: which store to use
+  - context: which context to use, you can use your own global context
 
 If you do not pass `keyPath`, you will get the whole state and dispatch which operate the whole state.
 
@@ -239,8 +205,6 @@ function MyComponent() {
 }
 ```
 
-*Notice, `Provider` is not required in ReactImmut, you can use `useStore` in your application directly.*
-
 ## :loud_sound: dispatch(keyPath?, update)
 
 To change state, you will use `dispatch`. It receive two parameters:
@@ -249,7 +213,7 @@ To change state, you will use `dispatch`. It receive two parameters:
 dispatch(keyPath?:string|array, update:Function|any)
 ```
 
-- `keyPath` is optional, it means which state (should must be an object) node you want to change. When not pass, the whole state will be replaced.
+- `keyPath` is optional, it means which state (which should must be an object) node you want to change. When not pass, the whole state will be replaced.
 - `update` is a function, which receives the state (or picked node) to be modified and returns the new value
 
 ```js
@@ -374,8 +338,6 @@ const namespaces = {
 }
 
 const store = createStore(initState, namespaces) // initState should must be an object
-
-<Provider store={store}> ...
 ```
 *The difference between `combineStore` and `createStore` is `createStore` will ignore namespace `name` property, it will be merged into global state with given property names.*
 
@@ -385,7 +347,7 @@ const store = createStore(initState, namespaces) // initState should must be an 
 import { useStore } from 'react-immut'
 
 function MyComponent() {
-  const [stateA, { changeA }] = useStore('A') // use A, not the `name` property of namespace
+  const [stateA, { changeA }] = useStore('A', { store }) // use A, not the `name` property of namespace
   // ...
 }
 ```
