@@ -163,7 +163,13 @@ export function useStore(keyPath, options = {}) {
     if (hasContext) {
       return
     }
-    return store.subscribe((next, prev) => {
+
+    // was changed before mounted
+    if (state !== store.state[name]) {
+      update(store.state[name])
+    }
+
+    const unsubscribe = store.subscribe((next, prev) => {
       if (keyPath) {
         if (isSymbol(keyPath) && next[keyPath] !== prev[keyPath]) {
           forceUpdate({})
@@ -176,6 +182,7 @@ export function useStore(keyPath, options = {}) {
         forceUpdate({})
       }
     })
+    return unsubscribe
   }, [keyPath, hasContext])
 
   const state2 = keyPath && isSymbol(keyPath) ? state[keyPath]
@@ -252,6 +259,11 @@ export function applyStore(namespace, { store = defaultStore } = {}) {
     const dispatch = store.dispatch[name]
 
     useEffect(() => {
+      // was changed before mounted
+      if (state !== store.state[name]) {
+        update(store.state[name])
+      }
+
       const unsubscribe = store.subscribe((next, prev) => {
         if (next[name] !== prev[name]) {
           update(next[name])
@@ -299,8 +311,7 @@ export function combineStore(namespaces, { store = defaultStore } = {}) {
 
   keys.forEach((key) => {
     const namespace = namespaces[key]
-    const symb = Symbol('SharedState')
-    const { name = symb } = namespace
+    const { name = Symbol('SharedState') } = namespace
 
     combined[name] = namespace
     names.push(name)
@@ -321,22 +332,6 @@ export function combineStore(namespaces, { store = defaultStore } = {}) {
     connect: _connect,
     remove,
   }
-}
-
-export function dispatch(keyPath, update, { store = defaultStore } = {}) {
-  const args = [keyPath]
-  if (!isUndefined(update)) {
-    args.push(update)
-  }
-  store.dispatch(...args)
-}
-
-export function subscribe(fn, { store = defaultStore } = {}) {
-  return store.subscribe(fn)
-}
-
-export function debug(switchto, { store = defaultStore } = {}) {
-  store.debug = !!switchto
 }
 
 export function useState(initState, { store = defaultStore } = {}) {
